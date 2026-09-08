@@ -3,141 +3,340 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Acheter des USDT — Étape 1 · Vos informations</title>
+<title>Acheter des USDT — Étape 1</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/css/style.css" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  .operator-card {
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+  }
+  .operator-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  }
+  .operator-card.selected {
+    border-color: #26a17b;
+    background: rgba(38, 161, 123, 0.1);
+  }
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 10px rgba(38, 161, 123, 0.3); }
+    50% { box-shadow: 0 0 20px rgba(38, 161, 123, 0.6); }
+  }
+  .loading-pulse {
+    animation: pulse-glow 2s infinite;
+  }
+</style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-5">
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
 
-  <div class="w-full max-w-md entree-ecran">
-    <div class="flex items-center justify-between mb-4">
-      <a href="/index.html" class="text-sm text-slate-400 hover:text-slate-200">&larr; Accueil</a>
-      <span class="text-xs text-slate-500">Étape 1 sur 5</span>
+  <!-- Header -->
+  <header class="border-b border-slate-700 bg-slate-900/50 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+      <button onclick="window.location.href='/index.html'" class="flex items-center gap-2 text-slate-300 hover:text-white transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Accueil
+      </button>
+      <div class="text-sm text-slate-400">Étape 1 sur 5</div>
     </div>
+  </header>
 
-    <div class="etapes mb-6" id="barre-etapes"></div>
+  <main class="max-w-4xl mx-auto px-6 py-8">
+    <div class="bg-slate-800/50 backdrop-blur rounded-2xl p-8 border border-slate-700 shadow-2xl">
+      
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold mb-2">Vos informations</h1>
+        <p class="text-slate-400">Ces informations nous permettent de préparer votre transaction.</p>
+      </div>
 
-    <div class="card glow-achat p-7">
-      <h1 class="font-display text-2xl font-semibold mb-1">Vos informations</h1>
-      <p class="text-sm text-slate-400 mb-6">Ces informations nous permettent de préparer votre transaction.</p>
-
-      <form id="form-etape1" class="space-y-4">
-        <div class="grid grid-cols-2 gap-3">
+      <form id="form-achat-step1" class="space-y-6">
+        
+        <!-- Nom et Prénom -->
+        <div class="grid md:grid-cols-2 gap-4">
           <div>
-            <label class="text-xs text-slate-400 mb-1 block">Prénom</label>
-            <input type="text" id="prenom" class="champ" placeholder="Ex : Aïcha" required />
+            <label class="block text-sm font-medium text-slate-300 mb-2">Prénom</label>
+            <input type="text" id="prenom" class="champ bg-slate-900 border-slate-600 text-white placeholder-slate-500" placeholder="Ex : Aïcha" required />
           </div>
           <div>
-            <label class="text-xs text-slate-400 mb-1 block">Nom</label>
-            <input type="text" id="nom" class="champ" placeholder="Ex : Traoré" required />
+            <label class="block text-sm font-medium text-slate-300 mb-2">Nom</label>
+            <input type="text" id="nom" class="champ bg-slate-900 border-slate-600 text-white placeholder-slate-500" placeholder="Ex : Traoré" required />
           </div>
         </div>
 
+        <!-- Numéro de téléphone -->
         <div>
-          <label class="text-xs text-slate-400 mb-1 block">Numéro de téléphone</label>
-          <input type="tel" id="telephone" class="champ" placeholder="Ex : +226 70 00 00 00" required />
+          <label class="block text-sm font-medium text-slate-300 mb-2">Numéro de téléphone</label>
+          <input type="tel" id="numero-telephone" class="champ bg-slate-900 border-slate-600 text-white placeholder-slate-500" placeholder="Ex : +226 70 00 00 00" required />
         </div>
 
+        <!-- Pays -->
         <div>
-          <label class="text-xs text-slate-400 mb-1 block">Pays</label>
-          <select id="pays" class="champ" required>
+          <label class="block text-sm font-medium text-slate-300 mb-2">Pays</label>
+          <select id="pays" class="champ bg-slate-900 border-slate-600 text-white" required>
             <option value="">Sélectionnez votre pays</option>
-            <option>Burkina Faso</option>
-            <option>Côte d'Ivoire</option>
-            <option>Bénin</option>
-            <option>Togo</option>
+            <option value="Burkina Faso">🇧🇫 Burkina Faso</option>
+            <option value="Côte d'Ivoire">🇨 Côte d'Ivoire</option>
+            <option value="Bénin">🇯🇯 Bénin</option>
+            <option value="Togo">🇬 Togo</option>
           </select>
         </div>
 
-        <div>
-          <label class="text-xs text-slate-400 mb-1 block">Opérateur Mobile Money</label>
-          <div id="liste-operateurs" class="grid grid-cols-3 gap-2">
-            <p class="col-span-3 text-xs text-slate-500">Sélectionnez d'abord un pays.</p>
+        <!-- Opérateurs disponibles (affichés dynamiquement) -->
+        <div id="operateurs-container" class="hidden">
+          <label class="block text-sm font-medium text-slate-300 mb-3">Opérateur Mobile Money</label>
+          <div id="liste-operateurs" class="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <!-- Les opérateurs seront injectés ici par JavaScript -->
           </div>
+          <input type="hidden" id="operateur-selectionne" required />
         </div>
 
+        <!-- Montant à acheter -->
         <div>
-          <label class="text-xs text-slate-400 mb-1 block">Montant à acheter (USDT)</label>
-          <input type="number" min="1" step="0.01" id="montant_usdt" class="champ" placeholder="Ex : 50" required />
-          <p class="text-xs text-slate-500 mt-1" id="conversion-info">Taux d'achat : chargement…</p>
+          <label class="block text-sm font-medium text-slate-300 mb-2">Montant à acheter (USDT)</label>
+          <input type="number" step="0.01" id="montant-usdt" class="champ bg-slate-900 border-slate-600 text-white placeholder-slate-500" placeholder="Ex : 50" min="1" required />
+          <p id="taux-info" class="text-sm text-slate-400 mt-2">Taux d'achat : <span id="taux-valeur">chargement...</span></p>
+          <p id="montant-fcfa" class="text-lg font-bold text-emerald-400 mt-1"></p>
         </div>
 
+        <!-- Adresse wallet USDT -->
         <div>
-          <label class="text-xs text-slate-400 mb-1 block">Adresse wallet USDT (réception)</label>
-          <input type="text" id="wallet_usdt_reception" class="champ" placeholder="Ex : 0x..." required />
+          <label class="block text-sm font-medium text-slate-300 mb-2">Adresse wallet USDT (réception)</label>
+          <input type="text" id="adresse-wallet" class="champ bg-slate-900 border-slate-600 text-white placeholder-slate-500 font-mono text-sm" placeholder="Ex : 0x..." required />
         </div>
 
-        <p id="erreur" class="text-sm text-rose-400 hidden"></p>
+        <!-- Messages d'erreur -->
+        <div id="message-erreur" class="text-red-400 text-sm hidden"></div>
 
-        <button type="submit" class="btn btn-primary w-full mt-2">Suivant</button>
+        <!-- Bouton Suivant -->
+        <button type="submit" class="btn btn-primary w-full py-4 text-lg font-semibold">
+          Suivant →
+        </button>
       </form>
     </div>
-  </div>
+  </main>
 
-  <script src="/js/main.js"></script>
   <script>
-    rendreEtapes(document.getElementById('barre-etapes'), 1);
+    // Configuration Supabase
+    const SUPABASE_URL = 'https://qlsetlqyejwrhztbesto.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4';
+    
+    let supabase;
+    if (typeof window !== 'undefined' && typeof window.supabase !== 'undefined') {
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      console.log("✅ Supabase client initialisé sur page achat");
+    } else {
+      console.error(" Échec initialisation Supabase sur page achat");
+    }
 
-    let agentsParPays = {};
-    let operateurSelectionne = null;
-    let tauxAchat = null;
+    let config = null;
+    let agents = [];
 
-    (async function initialiser() {
+    // Charger la configuration et les agents au démarrage
+    async function chargerDonneesInitiales() {
       try {
-        const [config, agents] = await Promise.all([recupererConfig(), recupererAgents()]);
-        tauxAchat = config.taux_achat;
-        document.getElementById('conversion-info').textContent = `Taux d'achat : ${tauxAchat} FCFA / USDT`;
-        agentsParPays = agents.reduce((acc, a) => {
-          (acc[a.pays] = acc[a.pays] || []).push(a);
-          return acc;
-        }, {});
-      } catch (e) {
-        afficherErreur(document.getElementById('erreur'), e.message);
-      }
-    })();
+        console.log("🔄 Chargement des données initiales...");
+        
+        // Charger la config
+        const { data: configData, error: configError } = await supabase
+          .from('config')
+          .select('*')
+          .limit(1)
+          .single();
 
-    document.getElementById('pays').addEventListener('change', (e) => {
-      const conteneur = document.getElementById('liste-operateurs');
-      conteneur.innerHTML = '';
-      operateurSelectionne = null;
-      const agents = agentsParPays[e.target.value] || [];
-      if (agents.length === 0) {
-        conteneur.innerHTML = '<p class="col-span-3 text-xs text-slate-500">Aucun opérateur disponible pour ce pays.</p>';
+        if (configError && configError.code !== 'PGRST116') {
+          console.error("Erreur config:", configError);
+          throw configError;
+        }
+
+        config = configData || {
+          taux_achat_client: 750,
+          adresse_usdt_reception: '0x5da17b728ab2d61ab273a1844b4ce0db4c545f95'
+        };
+
+        document.getElementById('taux-valeur').textContent = `${config.taux_achat_client} FCFA/USDT`;
+        console.log("✅ Configuration chargée:", config);
+
+        // Charger les agents
+        const { data: agentsData, error: agentsError } = await supabase
+          .from('agents')
+          .select('*')
+          .eq('actif', true);
+
+        if (agentsError) {
+          console.error("Erreur agents:", agentsError);
+          throw agentsError;
+        }
+        
+        agents = agentsData || [];
+        console.log("✅ Agents chargés:", agents.length);
+
+      } catch (error) {
+        console.error('❌ Erreur chargement données:', error);
+        const messageEl = document.getElementById('message-erreur');
+        messageEl.textContent = 'Impossible de charger les données. Veuillez réessayer.';
+        messageEl.classList.remove('hidden');
+      }
+    }
+
+    // Afficher les opérateurs selon le pays sélectionné
+    document.getElementById('pays').addEventListener('change', function() {
+      const paysSelectionne = this.value;
+      const container = document.getElementById('operateurs-container');
+      const listeOperateurs = document.getElementById('liste-operateurs');
+      
+      console.log("🔄 Pays sélectionné:", paysSelectionne);
+      
+      if (!paysSelectionne) {
+        container.classList.add('hidden');
         return;
       }
-      agents.forEach((agent) => {
-        conteneur.appendChild(creerCarteOperateur(agent, false, (a) => {
-          operateurSelectionne = a;
-          document.querySelectorAll('#liste-operateurs .choix-carte').forEach((el) => el.classList.remove('selectionne'));
-          event.currentTarget.classList.add('selectionne');
-        }));
-      });
-    });
 
-    document.getElementById('form-etape1').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const erreurEl = document.getElementById('erreur');
-      erreurEl.classList.add('hidden');
-
-      if (!operateurSelectionne) {
-        return afficherErreur(erreurEl, 'Veuillez sélectionner un opérateur Mobile Money.');
+      // Filtrer les agents pour ce pays
+      const agentsPays = agents.filter(agent => agent.pays === paysSelectionne);
+      console.log("📋 Agents trouvés pour", paysSelectionne, ":", agentsPays.length);
+      
+      if (agentsPays.length === 0) {
+        listeOperateurs.innerHTML = '<p class="text-slate-400 col-span-full text-center">Aucun opérateur disponible pour ce pays.</p>';
+        container.classList.remove('hidden');
+        return;
       }
 
-      ecrireParcours({
-        type: 'achat',
+      // Générer les cartes d'opérateurs avec logos
+      listeOperateurs.innerHTML = agentsPays.map(agent => {
+        const logoClass = getLogoClass(agent.operateur);
+        return `
+          <div class="operator-card bg-slate-900 border border-slate-700 rounded-xl p-4 cursor-pointer" 
+               onclick="selectionnerOperateur('${agent.operateur}', this)">
+            <div class="flex flex-col items-center text-center">
+              <div class="${logoClass} w-12 h-12 rounded-full flex items-center justify-center mb-2 text-lg font-bold">
+                ${getLogoInitial(agent.operateur)}
+              </div>
+              <p class="font-medium text-white">${agent.operateur}</p>
+              <p class="text-xs text-slate-400 mt-1">${agent.numero || 'Non spécifié'}</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      container.classList.remove('hidden');
+    });
+
+    function selectionnerOperateur(operateur, element) {
+      // Retirer la sélection précédente
+      document.querySelectorAll('.operator-card').forEach(card => {
+        card.classList.remove('selected');
+      });
+      
+      // Ajouter la sélection actuelle
+      element.classList.add('selected');
+      document.getElementById('operateur-selectionne').value = operateur;
+      console.log("✅ Opérateur sélectionné:", operateur);
+    }
+
+    function getLogoClass(operateur) {
+      const logos = {
+        'Orange Money': 'bg-orange-500 text-white',
+        'Moov Money': 'bg-blue-500 text-white',
+        'MTN Money': 'bg-yellow-500 text-black',
+        'Wave': 'bg-cyan-500 text-white',
+        'Celtiis': 'bg-purple-500 text-white',
+        'Mix Bay Yas': 'bg-green-500 text-white'
+      };
+      return logos[operateur] || 'bg-slate-600 text-white';
+    }
+
+    function getLogoInitial(operateur) {
+      const initials = {
+        'Orange Money': 'OM',
+        'Moov Money': 'MM',
+        'MTN Money': 'MTN',
+        'Wave': 'W',
+        'Celtiis': 'C',
+        'Mix Bay Yas': 'MBY'
+      };
+      return initials[operateur] || operateur.substring(0, 2).toUpperCase();
+    }
+
+    // Calculer le montant FCFA en temps réel
+    document.getElementById('montant-usdt').addEventListener('input', function() {
+      const montantUSDT = parseFloat(this.value) || 0;
+      if (montantUSDT > 0 && config) {
+        const montantFCFA = montantUSDT * config.taux_achat_client;
+        document.getElementById('montant-fcfa').textContent = 
+          `Vous paierez : ${montantFCFA.toLocaleString('fr-FR')} FCFA`;
+      } else {
+        document.getElementById('montant-fcfa').textContent = '';
+      }
+    });
+
+    // Gestion de la soumission du formulaire
+    document.getElementById('form-achat-step1').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const messageEl = document.getElementById('message-erreur');
+      messageEl.classList.add('hidden');
+
+      // Validation
+      const operateurSelectionne = document.getElementById('operateur-selectionne').value;
+      if (!operateurSelectionne) {
+        messageEl.textContent = 'Veuillez sélectionner un opérateur Mobile Money.';
+        messageEl.classList.remove('hidden');
+        return;
+      }
+
+      // Récupérer les données du formulaire
+      const formData = {
         prenom: document.getElementById('prenom').value,
         nom: document.getElementById('nom').value,
-        telephone: document.getElementById('telephone').value,
+        numero_telephone: document.getElementById('numero-telephone').value,
         pays: document.getElementById('pays').value,
-        operateur: operateurSelectionne.operateur,
-        agent_numero: operateurSelectionne.numero,
-        montant_usdt: document.getElementById('montant_usdt').value,
-        wallet_usdt_reception: document.getElementById('wallet_usdt_reception').value,
-        taux_achat: tauxAchat,
-      });
+        operateur: operateurSelectionne,
+        montant_usdt: parseFloat(document.getElementById('montant-usdt').value),
+        adresse_wallet_usdt: document.getElementById('adresse-wallet').value,
+        type_transaction: 'achat',
+        statut: 'en_attente'
+      };
 
-      window.location.href = '/achat-step2.html';
+      // Calculer le montant FCFA
+      formData.montant_fcfa = formData.montant_usdt * config.taux_achat_client;
+      formData.taux_applique = config.taux_achat_client;
+
+      console.log("📤 Envoi transaction:", formData);
+
+      try {
+        // Sauvegarder la transaction dans Supabase
+        const { data, error } = await supabase
+          .from('transactions')
+          .insert([formData])
+          .select()
+          .single();
+
+        if (error) {
+          console.error("Erreur sauvegarde:", error);
+          throw error;
+        }
+
+        console.log("✅ Transaction sauvegardée:", data);
+
+        // Stocker les données pour les étapes suivantes
+        sessionStorage.setItem('transaction_achat', JSON.stringify(data));
+        
+        // Rediriger vers l'étape 2
+        window.location.href = '/achat-step2.html';
+        
+      } catch (error) {
+        console.error('❌ Erreur sauvegarde transaction:', error);
+        messageEl.textContent = 'Une erreur est survenue. Veuillez réessayer.';
+        messageEl.classList.remove('hidden');
+      }
     });
+
+    // Initialisation
+    console.log("🚀 Initialisation page achat étape 1");
+    chargerDonneesInitiales();
   </script>
 </body>
 </html>
