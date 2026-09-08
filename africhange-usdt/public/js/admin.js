@@ -1,18 +1,25 @@
 // =====================================================================
-// AfriChange USDT — admin.js (VERSION CORRIGÉE ET COMPLÈTE)
-// Authentification Supabase et gestion du tableau de bord.
+// AfriChange USDT — admin.js (VERSION ULTIME CORRIGÉE)
+// Authentification Supabase et gestion complète du tableau de bord.
 // =====================================================================
 
 // ⚠️ CONFIGURATION SUPABASE (TES VRAIES CLÉS SONT DÉJÀ INSÉRÉES)
 const SUPABASE_URL = 'https://qlsetlqyejwrhztbesto.supabase.co'; 
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4'; 
 
-// Initialisation du client Supabase
+// Initialisation du client Supabase avec vérification
 let supabaseClient;
-if (typeof window !== 'undefined' && typeof supabase !== 'undefined') {
-  supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-} else {
-  console.error("Erreur: La librairie Supabase n'est pas chargée ou les variables sont manquantes.");
+if (typeof window !== 'undefined') {
+  try {
+    if (typeof supabase !== 'undefined') {
+      supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      console.log("✅ Supabase client initialisé avec succès");
+    } else {
+      console.error("❌ Librairie Supabase non chargée");
+    }
+  } catch (error) {
+    console.error(" Erreur lors de l'initialisation Supabase:", error);
+  }
 }
 
 const CLE_SESSION = 'africhange_admin_session';
@@ -45,7 +52,7 @@ async function connexionAdmin(email, password) {
     });
 
     if (error) {
-      // Traduction des erreurs courantes
+      console.error("Erreur de connexion:", error);
       if (error.message.includes('Invalid login credentials')) {
         throw new Error("Email ou mot de passe incorrect.");
       }
@@ -54,6 +61,7 @@ async function connexionAdmin(email, password) {
 
     if (data.user) {
       sauvegarderSessionAdmin(data.user.email);
+      console.log("✅ Connexion réussie pour:", data.user.email);
       return { success: true, user: data.user };
     } else {
       throw new Error("Échec de la connexion.");
@@ -72,7 +80,6 @@ async function deconnexionAdmin() {
   window.location.href = '/admin-login.html';
 }
 
-// Vérifier si l'utilisateur est connecté au chargement de la page
 async function verifierAuthAdmin() {
   const sessionEmail = recupererSessionAdmin();
   
@@ -82,20 +89,27 @@ async function verifierAuthAdmin() {
   }
 
   if (supabaseClient) {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    
-    if (!session) {
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      
+      if (!session) {
+        supprimerSessionAdmin();
+        window.location.href = '/admin-login.html';
+        return null;
+      }
+      return session.user;
+    } catch (error) {
+      console.error("Erreur vérification auth:", error);
       supprimerSessionAdmin();
       window.location.href = '/admin-login.html';
       return null;
     }
-    return session.user;
   }
   return null;
 }
 
 // =====================================================================
-// GESTION DES TRANSACTIONS (Supabase Direct)
+// GESTION DES TRANSACTIONS
 // =====================================================================
 
 async function chargerTransactions(filtres = {}) {
@@ -115,7 +129,12 @@ async function chargerTransactions(filtres = {}) {
 
     const { data, error } = await query;
 
-    if (error) throw error;
+    if (error) {
+      console.error("Erreur chargement transactions:", error);
+      throw error;
+    }
+    
+    console.log("✅ Transactions chargées:", data?.length || 0);
     return data || [];
   } catch (err) {
     console.error("Erreur chargement transactions:", err);
@@ -138,7 +157,12 @@ async function changerStatutTransaction(id, statut, note_admin = '') {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("Erreur mise à jour statut:", error);
+      throw error;
+    }
+    
+    console.log("✅ Transaction mise à jour:", id, "statut:", statut);
     return data;
   } catch (err) {
     console.error("Erreur mise à jour statut:", err);
@@ -160,10 +184,14 @@ async function chargerConfig() {
       .limit(1)
       .single();
 
-    if (error && error.code !== 'PGRST116') throw error;
+    if (error && error.code !== 'PGRST116') {
+      console.error("Erreur chargement config:", error);
+      throw error;
+    }
 
     // Valeurs par défaut si rien n'existe
     if (!data) {
+      console.log("️ Aucune config trouvée, utilisation des valeurs par défaut");
       return {
         adresse_usdt_reception: '0x5da17b728ab2d61ab273a1844b4ce0db4c545f95',
         taux_achat_client: 750,
@@ -172,6 +200,8 @@ async function chargerConfig() {
         frais_transaction: 0
       };
     }
+    
+    console.log("✅ Configuration chargée:", data);
     return data;
   } catch (err) {
     console.error("Erreur chargement config:", err);
@@ -183,6 +213,7 @@ async function enregistrerConfig(config) {
   if (!supabaseClient) throw new Error("Client Supabase non initialisé");
 
   try {
+    // Vérifier si une config existe déjà
     const { data: existing } = await supabaseClient
       .from('config')
       .select('id')
@@ -191,6 +222,7 @@ async function enregistrerConfig(config) {
 
     let result;
     if (existing) {
+      // Mettre à jour la config existante
       result = await supabaseClient
         .from('config')
         .update({
@@ -205,6 +237,7 @@ async function enregistrerConfig(config) {
         .select()
         .single();
     } else {
+      // Créer une nouvelle config
       result = await supabaseClient
         .from('config')
         .insert([{
@@ -218,7 +251,12 @@ async function enregistrerConfig(config) {
         .single();
     }
 
-    if (result.error) throw result.error;
+    if (result.error) {
+      console.error("Erreur sauvegarde config:", result.error);
+      throw result.error;
+    }
+    
+    console.log("✅ Configuration sauvegardée:", result.data);
     return result.data;
   } catch (err) {
     console.error("Erreur sauvegarde config:", err);
@@ -227,7 +265,7 @@ async function enregistrerConfig(config) {
 }
 
 // =====================================================================
-// GESTION DES AGENTS (CORRIGÉ)
+// GESTION DES AGENTS (CORRIGÉ COMPLÈTEMENT)
 // =====================================================================
 
 async function chargerAgentsAdmin() {
@@ -239,7 +277,12 @@ async function chargerAgentsAdmin() {
       .select('*')
       .order('pays', { ascending: true });
 
-    if (error) throw error;
+    if (error) {
+      console.error("Erreur chargement agents:", error);
+      throw error;
+    }
+    
+    console.log("✅ Agents chargés:", data?.length || 0);
     return data || [];
   } catch (err) {
     console.error("Erreur chargement agents:", err);
@@ -251,6 +294,8 @@ async function enregistrerAgent(id, donnees) {
   if (!supabaseClient) throw new Error("Client Supabase non initialisé");
 
   try {
+    console.log("🔄 Mise à jour agent ID:", id, "données:", donnees);
+    
     const result = await supabaseClient
       .from('agents')
       .update({
@@ -262,11 +307,16 @@ async function enregistrerAgent(id, donnees) {
       .select()
       .single();
 
-    if (result.error) throw result.error;
+    if (result.error) {
+      console.error("Erreur mise à jour agent:", result.error);
+      throw result.error;
+    }
+    
+    console.log("✅ Agent mis à jour:", id, "numéro:", donnees.numero);
     return result.data;
   } catch (err) {
     console.error("Erreur mise à jour agent:", err);
-    throw new Error("Impossible de mettre à jour l'agent.");
+    throw new Error("Impossible de mettre à jour l'agent: " + (err.message || err));
   }
 }
 
@@ -274,6 +324,8 @@ async function ajouterAgent(donnees) {
   if (!supabaseClient) throw new Error("Client Supabase non initialisé");
 
   try {
+    console.log("🔄 Ajout agent:", donnees);
+    
     const result = await supabaseClient
       .from('agents')
       .insert([{
@@ -285,11 +337,16 @@ async function ajouterAgent(donnees) {
       .select()
       .single();
 
-    if (result.error) throw result.error;
+    if (result.error) {
+      console.error("Erreur ajout agent:", result.error);
+      throw result.error;
+    }
+    
+    console.log("✅ Agent ajouté:", result.data);
     return result.data;
   } catch (err) {
     console.error("Erreur ajout agent:", err);
-    throw new Error("Impossible d'ajouter l'agent.");
+    throw new Error("Impossible d'ajouter l'agent: " + (err.message || err));
   }
 }
 
@@ -297,16 +354,23 @@ async function supprimerAgent(id) {
   if (!supabaseClient) throw new Error("Client Supabase non initialisé");
 
   try {
+    console.log("🔄 Suppression agent ID:", id);
+    
     const { error } = await supabaseClient
       .from('agents')
       .delete()
       .eq('id', id);
 
-    if (error) throw error;
+    if (error) {
+      console.error("Erreur suppression agent:", error);
+      throw error;
+    }
+    
+    console.log("✅ Agent supprimé:", id);
     return true;
   } catch (err) {
     console.error("Erreur suppression agent:", err);
-    throw new Error("Impossible de supprimer l'agent.");
+    throw new Error("Impossible de supprimer l'agent: " + (err.message || err));
   }
 }
 
@@ -358,4 +422,6 @@ if (typeof window !== 'undefined') {
   window.formaterFCFA = formaterFCFA;
   window.formaterDate = formaterDate;
   window.badgeStatut = badgeStatut;
+  
+  console.log("✅ Toutes les fonctions admin exportées globalement");
 }
