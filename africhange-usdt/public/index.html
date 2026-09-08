@@ -3,67 +3,161 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>AfriChange USDT — Échangez Mobile Money et USDT</title>
+<title>AfriChange USDT — Échange Mobile Money ↔ USDT</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/css/style.css" />
+<style>
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+  }
+  .floating { animation: float 3s ease-in-out infinite; }
+  .gradient-text {
+    background: linear-gradient(135deg, #26a17b, #22d3ee);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+</style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
 
-  <!-- En-tête -->
-  <header class="max-w-5xl w-full mx-auto px-6 pt-8 flex items-center justify-between">
-    <div class="flex items-center gap-2">
-      <div class="w-9 h-9 rounded-xl flex items-center justify-center font-display font-bold" style="background:#26a17b;color:#06120d;">₮</div>
-      <span class="font-display font-semibold text-lg">AfriChange <span style="color:#26a17b">USDT</span></span>
-    </div>
-    <a href="/admin-login.html" class="text-sm text-slate-400 hover:text-slate-200 transition">Espace admin</a>
-  </header>
-
-  <!-- Hero -->
-  <main class="flex-1 max-w-5xl w-full mx-auto px-6 py-16 flex flex-col items-center text-center entree-ecran">
-    <p class="text-sm text-slate-400 mb-3">Burkina Faso · Côte d'Ivoire · Bénin · Togo</p>
-    <h1 class="font-display text-4xl md:text-5xl font-semibold leading-tight max-w-2xl">
-      Vos francs CFA contre des USDT, en quelques minutes.
-    </h1>
-    <p class="text-slate-400 mt-4 max-w-lg">
-      Envoyez ou recevez de l'argent via Orange Money, Moov Money, Wave, MTN Money ou Celtiis — sans détour, avec un suivi clair à chaque étape.
-    </p>
-
-    <!-- Choix Achat / Vente -->
-    <div class="grid md:grid-cols-2 gap-5 mt-12 w-full max-w-2xl">
-      <a href="/achat-step1.html" class="card glow-achat p-8 text-left hover:-translate-y-1 transition-transform">
-        <div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-5" style="background:rgba(34,211,238,0.15)">
-          <span class="text-2xl">↓</span>
+  <!-- Header -->
+  <header class="border-b border-slate-700 bg-slate-900/50 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20 text-slate-900 font-bold text-2xl">₮</div>
+        <div>
+          <h1 class="font-bold text-xl gradient-text">AfriChange USDT</h1>
+          <p class="text-xs text-slate-400">Burkina Faso · Côte d'Ivoire · Bénin · Togo</p>
         </div>
-        <h2 class="font-display text-xl font-semibold mb-2">Acheter des USDT</h2>
-        <p class="text-sm text-slate-400">Payez par Mobile Money, recevez vos USDT sur votre wallet.</p>
-        <p class="text-xs text-slate-500 mt-4">Taux d'achat en vigueur affiché à l'étape suivante</p>
-      </a>
-
-      <a href="/vente-step1.html" class="card glow-vente p-8 text-left hover:-translate-y-1 transition-transform">
-        <div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-5" style="background:rgba(245,185,66,0.15)">
-          <span class="text-2xl">↑</span>
-        </div>
-        <h2 class="font-display text-xl font-semibold mb-2">Vendre des USDT</h2>
-        <p class="text-sm text-slate-400">Envoyez vos USDT, recevez vos francs CFA sur Mobile Money.</p>
-        <p class="text-xs text-slate-500 mt-4">Taux de vente en vigueur affiché à l'étape suivante</p>
-      </a>
-    </div>
-
-    <!-- Opérateurs supportés -->
-    <div class="mt-14">
-      <p class="text-xs uppercase tracking-wide text-slate-500 mb-4">Opérateurs pris en charge</p>
-      <div class="flex flex-wrap items-center justify-center gap-3">
-        <span class="px-4 py-2 rounded-full text-sm font-medium" style="background:rgba(255,121,0,0.15); color:#ff7900">Orange Money</span>
-        <span class="px-4 py-2 rounded-full text-sm font-medium" style="background:rgba(0,91,170,0.15); color:#4d9bdb">Moov Money</span>
-        <span class="px-4 py-2 rounded-full text-sm font-medium" style="background:rgba(29,200,224,0.15); color:#1dc8e0">Wave</span>
-        <span class="px-4 py-2 rounded-full text-sm font-medium" style="background:rgba(255,203,5,0.15); color:#ffcb05">MTN Money</span>
-        <span class="px-4 py-2 rounded-full text-sm font-medium" style="background:rgba(124,58,237,0.15); color:#a78bfa">Celtiis</span>
       </div>
     </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-6 py-12">
+    
+    <!-- Hero Section -->
+    <section class="text-center mb-16">
+      <h2 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+        Vos francs CFA contre des <span class="gradient-text">USDT</span>,<br>
+        en quelques minutes.
+      </h2>
+      <p class="text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
+        Envoyez ou recevez de l'argent via Orange Money, Moov Money, Wave, MTN Money ou Celtiis — sans détour, avec un suivi clair à chaque étape.
+      </p>
+    </section>
+
+    <!-- Options Principales -->
+    <section class="grid md:grid-cols-2 gap-8 mb-16">
+      
+      <!-- Achat USDT -->
+      <a href="/achat-step1.html" class="group block">
+        <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 border border-slate-700 hover:border-emerald-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-emerald-500/10 relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-emerald-500/20 transition duration-500"></div>
+          
+          <div class="relative z-10">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center mb-6 shadow-lg shadow-emerald-500/20 floating">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-slate-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+            </div>
+            
+            <h3 class="text-2xl font-bold mb-4 text-white group-hover:text-emerald-400 transition">Acheter des USDT</h3>
+            <p class="text-slate-300 mb-6 leading-relaxed">Payez par Mobile Money, recevez vos USDT sur votre wallet.</p>
+            
+            <div class="flex items-center gap-2 text-sm text-slate-400">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Taux d'achat en vigueur affiché à l'étape suivante</span>
+            </div>
+          </div>
+        </div>
+      </a>
+
+      <!-- Vente USDT -->
+      <a href="/vente-step1.html" class="group block">
+        <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 border border-slate-700 hover:border-amber-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-amber-500/10 relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-amber-500/20 transition duration-500"></div>
+          
+          <div class="relative z-10">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center mb-6 shadow-lg shadow-amber-500/20 floating">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-slate-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+              </svg>
+            </div>
+            
+            <h3 class="text-2xl font-bold mb-4 text-white group-hover:text-amber-400 transition">Vendre des USDT</h3>
+            <p class="text-slate-300 mb-6 leading-relaxed">Envoyez vos USDT, recevez vos francs CFA sur Mobile Money.</p>
+            
+            <div class="flex items-center gap-2 text-sm text-slate-400">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Taux de vente en vigueur affiché à l'étape suivante</span>
+            </div>
+          </div>
+        </div>
+      </a>
+    </section>
+
+    <!-- Avantages -->
+    <section class="mb-16">
+      <h3 class="text-2xl font-bold text-center mb-8">Pourquoi choisir AfriChange ?</h3>
+      <div class="grid md:grid-cols-3 gap-6">
+        
+        <div class="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
+          <div class="w-12 h-12 rounded-lg bg-emerald-500/10 flex items-center justify-center mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h4 class="font-semibold mb-2">Rapide & Simple</h4>
+          <p class="text-sm text-slate-400">Transaction complétée en quelques minutes, sans paperasse inutile.</p>
+        </div>
+
+        <div class="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
+          <div class="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </div>
+          <h4 class="font-semibold mb-2">Sécurisé</h4>
+          <p class="text-sm text-slate-400">Vos transactions sont protégées et vérifiées à chaque étape.</p>
+        </div>
+
+        <div class="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
+          <div class="w-12 h-12 rounded-lg bg-purple-500/10 flex items-center justify-center mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          </div>
+          <h4 class="font-semibold mb-2">Support Local</h4>
+          <p class="text-sm text-slate-400">Une équipe disponible pour vous accompagner dans tous les pays.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Opérateurs Supportés -->
+    <section class="text-center">
+      <h3 class="text-xl font-semibold mb-6">Opérateurs Mobile Money supportés</h3>
+      <div class="flex flex-wrap justify-center gap-4">
+        <div class="bg-slate-800/50 px-6 py-3 rounded-full border border-slate-700"> Orange Money</div>
+        <div class="bg-slate-800/50 px-6 py-3 rounded-full border border-slate-700">🔵 Moov Money</div>
+        <div class="bg-slate-800/50 px-6 py-3 rounded-full border border-slate-700">🟡 MTN Money</div>
+        <div class="bg-slate-800/50 px-6 py-3 rounded-full border border-slate-700">🌊 Wave</div>
+        <div class="bg-slate-800/50 px-6 py-3 rounded-full border border-slate-700">🟣 Celtiis</div>
+      </div>
+    </section>
   </main>
 
-  <footer class="text-center text-xs text-slate-600 pb-8">
-    AfriChange USDT — Service d'échange assisté, chaque transaction est vérifiée avant validation.
+  <!-- Footer -->
+  <footer class="border-t border-slate-700 bg-slate-900/50 mt-16">
+    <div class="max-w-6xl mx-auto px-6 py-8 text-center text-sm text-slate-400">
+      <p>&copy; 2024 AfriChange USDT. Tous droits réservés.</p>
+      <p class="mt-2">Échange rapide et sécurisé de Mobile Money vers USDT en Afrique de l'Ouest.</p>
+    </div>
   </footer>
 
 </body>
