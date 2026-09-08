@@ -1,5 +1,5 @@
 // =====================================================================
-// AfriChange USDT — admin.js (VERSION CORRIGÉE AVEC TES CLÉS)
+// AfriChange USDT — admin.js (VERSION CORRIGÉE ET COMPLÈTE)
 // Authentification Supabase et gestion du tableau de bord.
 // =====================================================================
 
@@ -227,7 +227,7 @@ async function enregistrerConfig(config) {
 }
 
 // =====================================================================
-// GESTION DES AGENTS
+// GESTION DES AGENTS (CORRIGÉ)
 // =====================================================================
 
 async function chargerAgentsAdmin() {
@@ -254,8 +254,6 @@ async function enregistrerAgent(id, donnees) {
     const result = await supabaseClient
       .from('agents')
       .update({
-        pays: donnees.pays,
-        operateur: donnees.operateur,
         numero: donnees.numero,
         actif: donnees.actif !== undefined ? donnees.actif : true,
         updated_at: new Date().toISOString()
