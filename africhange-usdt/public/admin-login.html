@@ -1,11 +1,18 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>AfriChange USDT — Connexion admin</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link rel="stylesheet" href="/css/style.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AfriChange USDT — Connexion admin</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- ⚠️ NOUVEAU : Script Supabase (AJOUTÉ ICI) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- Style personnalisé -->
+  <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body class="min-h-screen flex items-center justify-center p-5">
 
@@ -38,23 +45,38 @@
     </p>
   </div>
 
+  <!-- Logique Admin -->
   <script src="/js/admin.js"></script>
+  
   <script>
-    if (recupererTokenAdmin()) window.location.href = '/admin-dashboard.html';
+    // Vérifier si déjà connecté
+    if (typeof recupererTokenAdmin === 'function' && recupererTokenAdmin()) {
+      window.location.href = '/admin-dashboard.html';
+    }
 
+    // Gestion de la soumission du formulaire
     document.getElementById('form-login').addEventListener('submit', async (e) => {
       e.preventDefault();
       const erreurEl = document.getElementById('erreur');
       erreurEl.classList.add('hidden');
+      erreurEl.textContent = '';
+
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
 
       try {
-        await connexionAdmin(
-          document.getElementById('email').value,
-          document.getElementById('password').value
-        );
+        // Appel à la fonction de connexion définie dans admin.js
+        if (typeof connexionAdmin !== 'function') {
+          throw new Error("Erreur de configuration : la fonction de connexion est manquante.");
+        }
+        
+        await connexionAdmin(email, password);
+        
+        // Redirection en cas de succès
         window.location.href = '/admin-dashboard.html';
       } catch (err) {
-        erreurEl.textContent = err.message;
+        console.error(err);
+        erreurEl.textContent = err.message || "Une erreur est survenue lors de la connexion.";
         erreurEl.classList.remove('hidden');
       }
     });
