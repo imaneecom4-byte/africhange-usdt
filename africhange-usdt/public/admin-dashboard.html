@@ -3,297 +3,464 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>AfriChange USDT — Tableau de bord</title>
+<title>AfriChange USDT — Admin Pro</title>
+<!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com"></script>
-<link rel="stylesheet" href="/css/style.css" />
+<!-- Supabase JS -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Icons (Phosphor Icons pour un look pro) -->
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  body { font-family: 'Outfit', sans-serif; }
+  
+  /* Glassmorphism Effect */
+  .glass-panel {
+    background: rgba(30, 41, 59, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  
+  .glass-card {
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #0f172a; }
+  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+  /* Animations */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+  
+  .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px; }
+</style>
 </head>
-<body class="min-h-screen">
+<body class="bg-slate-950 text-slate-200 min-h-screen selection:bg-emerald-500 selection:text-white">
 
-  <!-- En-tête -->
-  <header class="border-b" style="border-color:var(--border)">
-    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-      <div class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-lg flex items-center justify-center font-display font-bold text-sm" style="background:#26a17b;color:#06120d;">₮</div>
-        <span class="font-display font-semibold">AfriChange <span style="color:#26a17b">Admin</span></span>
-      </div>
-      <button onclick="deconnexionAdmin()" class="text-sm text-slate-400 hover:text-slate-200">Se déconnecter</button>
-    </div>
-  </header>
-
-  <main class="max-w-6xl mx-auto px-6 py-8">
-
-    <!-- Cartes de bénéfices -->
-    <div class="grid md:grid-cols-4 gap-4 mb-8">
-      <div class="card p-5">
-        <p class="text-xs text-slate-400 mb-1">Bénéfice total</p>
-        <p id="benef-total" class="font-display text-2xl font-semibold" style="color:#26a17b">—</p>
-      </div>
-      <div class="card p-5">
-        <p class="text-xs text-slate-400 mb-1">Transactions validées</p>
-        <p id="benef-nb" class="font-display text-2xl font-semibold">—</p>
-      </div>
-      <div class="card p-5">
-        <p class="text-xs text-slate-400 mb-1">Volume acheté</p>
-        <p id="benef-achat" class="font-display text-2xl font-semibold" style="color:#22d3ee">—</p>
-      </div>
-      <div class="card p-5">
-        <p class="text-xs text-slate-400 mb-1">Volume vendu</p>
-        <p id="benef-vente" class="font-display text-2xl font-semibold" style="color:#f5b942">—</p>
+  <!-- Sidebar / Header Mobile -->
+  <nav class="fixed top-0 w-full z-50 glass-panel border-b-0 border-white/10 px-6 py-4 flex justify-between items-center">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20 text-slate-900 font-bold text-xl">₮</div>
+      <div>
+        <h1 class="font-bold text-lg tracking-tight text-white">AfriChange <span class="text-emerald-400">Admin</span></h1>
+        <p class="text-xs text-slate-400">Gestion Centrale</p>
       </div>
     </div>
-
-    <!-- Onglets -->
-    <div class="flex gap-2 mb-6">
-      <button class="onglet-btn btn btn-outline" data-onglet="transactions">Transactions</button>
-      <button class="onglet-btn btn btn-outline" data-onglet="configuration">Configuration</button>
+    <div class="flex items-center gap-4">
+      <button onclick="afficherNotifications()" class="relative p-2 rounded-full hover:bg-white/5 transition group">
+        <i class="ph ph-bell text-xl text-slate-300 group-hover:text-emerald-400 transition"></i>
+        <span id="badge-notif" class="hidden absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-slate-900 animate-pulse"></span>
+      </button>
+      <button onclick="deconnexionAdmin()" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-red-500/10 hover:text-red-400 border border-slate-700 hover:border-red-500/30 transition text-sm font-medium">
+        <i class="ph ph-sign-out"></i> Déconnexion
+      </button>
     </div>
+  </nav>
 
-    <!-- Onglet Transactions -->
-    <section id="onglet-transactions">
-      <div class="flex flex-wrap gap-3 mb-5">
-        <select id="filtre-statut" class="champ w-auto">
-          <option value="">Tous les statuts</option>
-          <option value="en_attente">En attente</option>
-          <option value="valide">Validées</option>
-          <option value="rejete">Rejetées</option>
-        </select>
-        <select id="filtre-type" class="champ w-auto">
-          <option value="">Achat et vente</option>
-          <option value="achat">Achat</option>
-          <option value="vente">Vente</option>
-        </select>
-        <button id="btn-rafraichir" class="btn btn-outline">Rafraîchir</button>
+  <main class="pt-24 pb-10 px-6 max-w-7xl mx-auto space-y-8">
+
+    <!-- STATS CARDS -->
+    <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in">
+      <!-- Card 1 -->
+      <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
+        <div class="absolute right-0 top-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-emerald-500/20 transition duration-500"></div>
+        <div class="flex justify-between items-start mb-4">
+          <div>
+            <p class="text-slate-400 text-sm font-medium">Bénéfice Total</p>
+            <h3 id="stat-benef" class="text-3xl font-bold text-white mt-1">— FCFA</h3>
+          </div>
+          <div class="p-3 bg-emerald-500/10 rounded-xl text-emerald-400"><i class="ph ph-currency-dollar text-2xl"></i></div>
+        </div>
+        <div class="text-xs text-emerald-400 flex items-center gap-1"><i class="ph ph-trend-up"></i> +2.5% cette semaine</div>
       </div>
 
-      <div class="card overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead>
-            <tr class="text-left text-slate-400 border-b" style="border-color:var(--border)">
-              <th class="p-4 font-normal">Client</th>
-              <th class="p-4 font-normal">Type</th>
-              <th class="p-4 font-normal">Montant</th>
-              <th class="p-4 font-normal">Statut</th>
-              <th class="p-4 font-normal">Date</th>
-              <th class="p-4 font-normal">Preuve</th>
-              <th class="p-4 font-normal">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="corps-tableau">
-            <tr><td colspan="7" class="p-6 text-center text-slate-500">Chargement…</td></tr>
-          </tbody>
-        </table>
+      <!-- Card 2 -->
+      <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
+        <div class="absolute right-0 top-0 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-blue-500/20 transition duration-500"></div>
+        <div class="flex justify-between items-start mb-4">
+          <div>
+            <p class="text-slate-400 text-sm font-medium">Transactions Validées</p>
+            <h3 id="stat-validees" class="text-3xl font-bold text-white mt-1">—</h3>
+          </div>
+          <div class="p-3 bg-blue-500/10 rounded-xl text-blue-400"><i class="ph ph-check-circle text-2xl"></i></div>
+        </div>
+        <div class="text-xs text-slate-500">Total historique</div>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
+        <div class="absolute right-0 top-0 w-24 h-24 bg-cyan-500/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-cyan-500/20 transition duration-500"></div>
+        <div class="flex justify-between items-start mb-4">
+          <div>
+            <p class="text-slate-400 text-sm font-medium">Volume Acheté</p>
+            <h3 id="stat-achat" class="text-3xl font-bold text-white mt-1">— USDT</h3>
+          </div>
+          <div class="p-3 bg-cyan-500/10 rounded-xl text-cyan-400"><i class="ph ph-arrow-down-left text-2xl"></i></div>
+        </div>
+        <div class="text-xs text-slate-500">Entrées clients</div>
+      </div>
+
+      <!-- Card 4 -->
+      <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
+        <div class="absolute right-0 top-0 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-amber-500/20 transition duration-500"></div>
+        <div class="flex justify-between items-start mb-4">
+          <div>
+            <p class="text-slate-400 text-sm font-medium">Volume Vendu</p>
+            <h3 id="stat-vente" class="text-3xl font-bold text-white mt-1">— USDT</h3>
+          </div>
+          <div class="p-3 bg-amber-500/10 rounded-xl text-amber-400"><i class="ph ph-arrow-up-right text-2xl"></i></div>
+        </div>
+        <div class="text-xs text-slate-500">Sorties vers Mobile Money</div>
       </div>
     </section>
 
-    <!-- Onglet Configuration -->
-    <section id="onglet-configuration" class="hidden">
-      <div class="grid md:grid-cols-2 gap-6">
-        <div class="card p-6">
-          <h2 class="font-display text-lg font-semibold mb-4">Taux et adresse USDT</h2>
+    <!-- MAIN CONTENT TABS -->
+    <div class="flex flex-col lg:flex-row gap-8">
+      
+      <!-- LEFT COLUMN: TRANSACTIONS -->
+      <div class="lg:w-2/3 space-y-6 animate-fade-in" style="animation-delay: 0.1s;">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-bold text-white flex items-center gap-2"><i class="ph ph-list-dashes text-emerald-400"></i> Transactions Récentes</h2>
+          <div class="flex gap-2">
+            <select id="filtre-statut" class="bg-slate-900 border border-slate-700 text-slate-300 text-sm rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 outline-none">
+              <option value="">Tous les statuts</option>
+              <option value="en_attente">En attente </option>
+              <option value="valide">Validées 🟢</option>
+              <option value="rejete">Rejetées ⚫</option>
+            </select>
+            <button onclick="rafraichirTransactions()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg border border-slate-700 transition"><i class="ph ph-arrows-clockwise"></i></button>
+          </div>
+        </div>
+
+        <div class="glass-panel rounded-2xl overflow-hidden shadow-xl">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-900/50 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-700">
+                  <th class="p-4 font-semibold">Client</th>
+                  <th class="p-4 font-semibold">Type</th>
+                  <th class="p-4 font-semibold">Montant</th>
+                  <th class="p-4 font-semibold">Statut</th>
+                  <th class="p-4 font-semibold text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="corps-tableau" class="divide-y divide-slate-800 text-sm">
+                <tr><td colspan="5" class="p-8 text-center text-slate-500">Chargement des données...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: CONFIG & AGENTS -->
+      <div class="lg:w-1/3 space-y-6 animate-fade-in" style="animation-delay: 0.2s;">
+        
+        <!-- Config Rapide -->
+        <div class="glass-card p-6 rounded-2xl">
+          <h3 class="font-bold text-white mb-4 flex items-center gap-2"><i class="ph ph-sliders text-emerald-400"></i> Configuration</h3>
           <form id="form-config" class="space-y-4">
-            <div>
-              <label class="text-xs text-slate-400 mb-1 block">Taux d'achat (FCFA / USDT)</label>
-              <input type="number" step="0.01" id="cfg-taux-achat" class="champ" required />
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs text-slate-400 block mb-1">Taux Achat</label>
+                <input type="number" id="cfg-taux-achat" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-emerald-500 outline-none transition" placeholder="750">
+              </div>
+              <div>
+                <label class="text-xs text-slate-400 block mb-1">Taux Vente</label>
+                <input type="number" id="cfg-taux-vente" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-emerald-500 outline-none transition" placeholder="730">
+              </div>
             </div>
             <div>
-              <label class="text-xs text-slate-400 mb-1 block">Taux de vente (FCFA / USDT)</label>
-              <input type="number" step="0.01" id="cfg-taux-vente" class="champ" required />
+              <label class="text-xs text-slate-400 block mb-1">Adresse USDT</label>
+              <input type="text" id="cfg-adresse" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-slate-300 focus:border-emerald-500 outline-none transition" placeholder="0x...">
             </div>
-            <div>
-              <label class="text-xs text-slate-400 mb-1 block">Marge bénéficiaire (FCFA / USDT)</label>
-              <input type="number" step="0.01" id="cfg-marge" class="champ" required />
-            </div>
-            <div>
-              <label class="text-xs text-slate-400 mb-1 block">Adresse USDT de réception</label>
-              <input type="text" id="cfg-adresse" class="champ font-mono text-xs" required />
-            </div>
-            <div>
-              <label class="text-xs text-slate-400 mb-1 block">Réseau</label>
-              <input type="text" id="cfg-reseau" class="champ" required />
-            </div>
-            <p id="config-message" class="text-sm hidden"></p>
-            <button type="submit" class="btn btn-primary w-full">Enregistrer</button>
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2 rounded-lg shadow-lg shadow-emerald-900/20 transition transform active:scale-95">Sauvegarder</button>
           </form>
         </div>
 
-        <div class="card p-6">
-          <h2 class="font-display text-lg font-semibold mb-4">Numéros des agents Mobile Money</h2>
-          <div id="liste-agents-admin" class="space-y-3"></div>
+        <!-- Gestion Agents -->
+        <div class="glass-card p-6 rounded-2xl flex flex-col h-[500px]">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-white flex items-center gap-2"><i class="ph ph-users text-amber-400"></i> Agents Mobile Money</h3>
+            <button onclick="ouvrirModalAgent()" class="text-xs bg-slate-800 hover:bg-emerald-600 hover:text-white text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1">
+              <i class="ph ph-plus"></i> Ajouter
+            </button>
+          </div>
+          
+          <div id="liste-agents-admin" class="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+            <!-- Les agents seront injectés ici par JS -->
+            <div class="text-center text-slate-500 mt-10">Chargement...</div>
+          </div>
         </div>
+
       </div>
-    </section>
+    </div>
   </main>
 
-  <!-- Modale de zoom sur la preuve -->
-  <div id="modale-preuve" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-6 z-50" onclick="fermerModale()">
-    <img id="modale-image" src="" alt="Preuve de transaction" class="max-w-full max-h-full rounded-xl" />
+  <!-- MODAL PREUVE (ZOOM) -->
+  <div id="modale-preuve" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm z-[60] flex items-center justify-center p-4" onclick="fermerModale()">
+    <div class="relative max-w-3xl w-full">
+      <button class="absolute top-4 right-4 text-white hover:text-red-400 text-3xl font-light">&times;</button>
+      <img id="modale-image" src="" alt="Preuve" class="w-full h-auto rounded-xl shadow-2xl border border-white/10" />
+    </div>
   </div>
 
+  <!-- MODAL AJOUT AGENT -->
+  <div id="modale-agent" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl transform transition-all scale-100">
+      <h3 class="text-lg font-bold text-white mb-4">Nouvel Agent</h3>
+      <form id="form-nouvel-agent" class="space-y-4">
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Pays</label>
+          <select id="new-agent-pays" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500">
+            <option value="Burkina Faso">🇫 Burkina Faso</option>
+            <option value="Côte d'Ivoire">🇨🇮 Côte d'Ivoire</option>
+            <option value="Bénin">🇯 Bénin</option>
+            <option value="Togo">🇹🇬 Togo</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Opérateur</label>
+          <select id="new-agent-operateur" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500">
+            <option value="Orange Money">Orange Money</option>
+            <option value="Moov Money">Moov Money</option>
+            <option value="MTN Money">MTN Money</option>
+            <option value="Wave">Wave</option>
+            <option value="Celtiis">Celtiis</option>
+            <option value="Mix Bay Yas">Mix Bay Yas</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Numéro</label>
+          <input type="text" id="new-agent-numero" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500" placeholder="+225 07..." required>
+        </div>
+        <div class="flex gap-3 pt-2">
+          <button type="button" onclick="fermerModalAgent()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-2 rounded-lg transition">Annuler</button>
+          <button type="submit" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg font-medium shadow-lg shadow-emerald-900/20 transition">Créer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- SCRIPT LOGIQUE -->
   <script src="/js/admin.js"></script>
   <script>
-    if (!recupererTokenAdmin()) window.location.href = '/admin-login.html';
-
-    // --- Gestion des onglets ---
-    const onglets = document.querySelectorAll('.onglet-btn');
-    function activerOnglet(nom) {
-      onglets.forEach((b) => b.classList.toggle('btn-primary', b.dataset.onglet === nom));
-      document.getElementById('onglet-transactions').classList.toggle('hidden', nom !== 'transactions');
-      document.getElementById('onglet-configuration').classList.toggle('hidden', nom !== 'configuration');
-      if (nom === 'configuration') chargerConfigurationUI();
+    // --- CONFIG SUPABASE ---
+    const SB_URL = 'https://qlsetlqyejwrhztbesto.supabase.co';
+    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4';
+    let supabaseDirect;
+    if (typeof supabase !== 'undefined') {
+      supabaseDirect = supabase.createClient(SB_URL, SB_KEY);
     }
-    onglets.forEach((b) => b.addEventListener('click', () => activerOnglet(b.dataset.onglet)));
-    activerOnglet('transactions');
 
-    // --- Bénéfices ---
-    async function rafraichirBenefices() {
+    // --- AUTH ---
+    async function verifierAuth() {
+      if (typeof verifierAuthAdmin === 'function') await verifierAuthAdmin();
+      else if (!sessionStorage.getItem('africhange_admin_session')) window.location.href = '/admin-login.html';
+    }
+    verifierAuth();
+
+    // --- STATS ---
+    async function rafraichirStats() {
+      if (!supabaseDirect) return;
       try {
-        const b = await chargerBenefices();
-        document.getElementById('benef-total').textContent = formaterFCFA(b.benefice_total_fcfa);
-        document.getElementById('benef-nb').textContent = b.transactions_validees;
-        document.getElementById('benef-achat').textContent = `${b.volume_achat_usdt} USDT`;
-        document.getElementById('benef-vente').textContent = `${b.volume_vente_usdt} USDT`;
+        const { data, error } = await supabaseDirect.from('transactions').select('type_transaction, montant_usdt, benefice_estime').eq('statut', 'valide');
+        if (error) throw error;
+        const nb = data.length;
+        const benef = data.reduce((sum, t) => sum + (parseFloat(t.benefice_estime) || 0), 0);
+        const achat = data.filter(t => t.type_transaction === 'achat').reduce((sum, t) => sum + (parseFloat(t.montant_usdt) || 0), 0);
+        const vente = data.filter(t => t.type_transaction === 'vente').reduce((sum, t) => sum + (parseFloat(t.montant_usdt) || 0), 0);
+        
+        document.getElementById('stat-benef').textContent = benef.toLocaleString('fr-FR') + ' FCFA';
+        document.getElementById('stat-validees').textContent = nb;
+        document.getElementById('stat-achat').textContent = achat.toFixed(2) + ' USDT';
+        document.getElementById('stat-vente').textContent = vente.toFixed(2) + ' USDT';
       } catch (e) { console.error(e); }
     }
 
-    // --- Transactions ---
+    // --- TRANSACTIONS ---
     async function rafraichirTransactions() {
       const corps = document.getElementById('corps-tableau');
-      corps.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-500">Chargement…</td></tr>';
+      corps.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-500">Actualisation...</td></tr>';
+      
       try {
-        const filtres = {
-          statut: document.getElementById('filtre-statut').value,
-          type: document.getElementById('filtre-type').value,
-        };
-        Object.keys(filtres).forEach((k) => !filtres[k] && delete filtres[k]);
-        const transactions = await chargerTransactions(filtres);
+        const statut = document.getElementById('filtre-statut').value;
+        let query = supabaseDirect.from('transactions').select('*').order('created_at', { ascending: false }).limit(50);
+        if (statut) query = query.eq('statut', statut);
+        
+        const { data, error } = await query;
+        if (error) throw error;
 
-        if (transactions.length === 0) {
-          corps.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-500">Aucune transaction.</td></tr>';
+        if (!data || data.length === 0) {
+          corps.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-slate-500">Aucune transaction.</td></tr>';
           return;
         }
 
-        corps.innerHTML = transactions.map((t) => `
-          <tr class="border-b" style="border-color:var(--border)">
-            <td class="p-4">
-              <div class="font-medium">${t.prenom || ''} ${t.nom}</div>
-              <div class="text-xs text-slate-500">${t.telephone}</div>
-            </td>
-            <td class="p-4">
-              <span class="text-xs px-2.5 py-1 rounded-full font-medium" style="background:${t.type === 'achat' ? 'rgba(34,211,238,0.15);color:#22d3ee' : 'rgba(245,185,66,0.15);color:#f5b942'}">
-                ${t.type === 'achat' ? 'Achat' : 'Vente'}
-              </span>
-            </td>
-            <td class="p-4">
-              <div>${t.montant_usdt} USDT</div>
-              <div class="text-xs text-slate-500">${formaterFCFA(t.montant_fcfa)}</div>
-            </td>
-            <td class="p-4">${badgeStatut(t.statut)}</td>
-            <td class="p-4 text-xs text-slate-400">${formaterDate(t.created_at)}</td>
-            <td class="p-4">
-              ${t.preuve_url
-                ? `<button class="text-xs underline text-slate-300" onclick="ouvrirModale('${t.preuve_url}')">Voir</button>`
-                : (t.txid_usdt ? `<span class="text-xs font-mono text-slate-400">${t.txid_usdt.slice(0, 10)}…</span>` : '<span class="text-xs text-slate-600">—</span>')
-              }
-            </td>
-            <td class="p-4">
-              ${t.statut === 'en_attente' ? `
-                <div class="flex gap-2">
-                  <button class="btn btn-primary" style="padding:0.4rem 0.8rem;" onclick="validerTransaction('${t.id}')">Valider</button>
-                  <button class="btn" style="padding:0.4rem 0.8rem; background:rgba(242,88,107,0.15); color:#f2586b;" onclick="rejeterTransaction('${t.id}')">Rejeter</button>
-                </div>
-              ` : '<span class="text-xs text-slate-600">—</span>'}
-            </td>
-          </tr>
-        `).join('');
+        verifierNouvellesTransactions(data);
+
+        corps.innerHTML = data.map(t => {
+          const isAchat = t.type_transaction === 'achat';
+          const typeBadge = isAchat 
+            ? '<span class="px-2 py-1 rounded bg-cyan-500/10 text-cyan-400 text-xs font-bold border border-cyan-500/20">ACHAT</span>' 
+            : '<span class="px-2 py-1 rounded bg-amber-500/10 text-amber-400 text-xs font-bold border border-amber-500/20">VENTE</span>';
+          
+          const statusClass = t.statut === 'en_attente' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' 
+                            : t.statut === 'valide' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                            : 'bg-red-500/10 text-red-400 border-red-500/20';
+          const statusLabel = t.statut === 'en_attente' ? 'En attente' : t.statut === 'valide' ? 'Validée' : 'Rejetée';
+
+          return `
+            <tr class="hover:bg-white/5 transition group">
+              <td class="p-4">
+                <div class="font-bold text-white">${t.nom} ${t.prenom || ''}</div>
+                <div class="text-xs text-slate-400">${t.numero_telephone}</div>
+              </td>
+              <td class="p-4">${typeBadge}</td>
+              <td class="p-4">
+                <div class="font-bold text-slate-200">${t.montant_usdt} USDT</div>
+                <div class="text-xs text-slate-500">${formaterFCFA(t.montant_fcfa)}</div>
+              </td>
+              <td class="p-4"><span class="status-badge ${statusClass} border">${statusLabel}</span></td>
+              <td class="p-4 text-right">
+                ${t.statut === 'en_attente' ? `
+                  <div class="flex justify-end gap-2">
+                    <button onclick="validerTransaction('${t.id}')" class="p-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition shadow-lg shadow-emerald-900/20" title="Valider"><i class="ph ph-check"></i></button>
+                    <button onclick="rejeterTransaction('${t.id}')" class="p-2 rounded-lg bg-slate-700 hover:bg-red-500 text-white transition" title="Rejeter"><i class="ph ph-x"></i></button>
+                    ${t.preuve_url ? `<button onclick="ouvrirModale('${t.preuve_url}')" class="p-2 rounded-lg bg-slate-700 hover:bg-blue-500 text-white transition" title="Voir Preuve"><i class="ph ph-eye"></i></button>` : ''}
+                  </div>
+                ` : '<span class="text-xs text-slate-600 italic">Terminé</span>'}
+              </td>
+            </tr>
+          `;
+        }).join('');
       } catch (e) {
-        corps.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-rose-400">${e.message}</td></tr>`;
+        corps.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-red-400">Erreur: ${e.message}</td></tr>`;
       }
     }
 
-    async function validerTransaction(id) {
-      await changerStatutTransaction(id, 'valide');
-      rafraichirTransactions();
-      rafraichirBenefices();
+    // --- NOTIFICATIONS ---
+    let dernierNbAttente = 0;
+    function verifierNouvellesTransactions(data) {
+      const nb = data.filter(t => t.statut === 'en_attente').length;
+      if (nb > 0 && nb > dernierNbAttente) {
+        if ("Notification" in window && Notification.permission === "granted") {
+          new Notification(`🔔 AfriChange: ${nb} transaction(s) en attente !`, { body: "Un client a envoyé une preuve.", icon: "/icon.png" });
+        }
+      }
+      dernierNbAttente = nb;
+      const badge = document.getElementById('badge-notif');
+      if (nb > 0) {
+        badge.textContent = nb;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
     }
-    async function rejeterTransaction(id) {
-      const note = prompt('Motif du rejet (optionnel) :') || '';
-      await changerStatutTransaction(id, 'rejete', note);
-      rafraichirTransactions();
-    }
+    function afficherNotifications() { alert(`Vous avez ${dernierNbAttente} transaction(s) en attente.`); document.getElementById('filtre-statut').value = 'en_attente'; rafraichirTransactions(); }
+    if ("Notification" in window && Notification.permission !== "granted") Notification.requestPermission();
 
-    function ouvrirModale(url) {
-      document.getElementById('modale-image').src = url;
-      document.getElementById('modale-preuve').classList.remove('hidden');
-    }
-    function fermerModale() {
-      document.getElementById('modale-preuve').classList.add('hidden');
-    }
+    // --- ACTIONS ---
+    async function validerTransaction(id) { if(!confirm("Valider cette transaction ?")) return; await changerStatutTransaction(id, 'valide'); rafraichirTransactions(); rafraichirStats(); }
+    async function rejeterTransaction(id) { const m = prompt("Motif du rejet :"); if(m===null) return; await changerStatutTransaction(id, 'rejete', m); rafraichirTransactions(); }
+    function ouvrirModale(url) { document.getElementById('modale-image').src = url; document.getElementById('modale-preuve').classList.remove('hidden'); }
+    function fermerModale() { document.getElementById('modale-preuve').classList.add('hidden'); }
 
-    document.getElementById('btn-rafraichir').addEventListener('click', rafraichirTransactions);
-    document.getElementById('filtre-statut').addEventListener('change', rafraichirTransactions);
-    document.getElementById('filtre-type').addEventListener('change', rafraichirTransactions);
-
-    // --- Configuration ---
-    async function chargerConfigurationUI() {
+    // --- AGENTS (LOGIQUE COMPLÈTE) ---
+    async function chargerAgentsUI() {
       try {
-        const cfg = await chargerConfig();
-        document.getElementById('cfg-taux-achat').value = cfg.taux_achat;
-        document.getElementById('cfg-taux-vente').value = cfg.taux_vente;
-        document.getElementById('cfg-marge').value = cfg.marge_beneficiaire;
-        document.getElementById('cfg-adresse').value = cfg.adresse_usdt;
-        document.getElementById('cfg-reseau').value = cfg.reseau_usdt;
+        const { data, error } = await supabaseDirect.from('agents').select('*').order('pays');
+        if (error) throw error;
+        const container = document.getElementById('liste-agents-admin');
+        
+        if (!data || data.length === 0) {
+          container.innerHTML = '<div class="text-center text-slate-500 text-sm py-4">Aucun agent configuré.</div>';
+          return;
+        }
 
-        const agents = await chargerAgentsAdmin();
-        const conteneur = document.getElementById('liste-agents-admin');
-        conteneur.innerHTML = agents.map((a) => `
-          <div class="flex items-center gap-2">
-            <div class="flex-1">
-              <div class="text-xs text-slate-400">${a.pays} · ${a.operateur}</div>
-              <input type="text" class="champ mt-1" value="${a.numero || ''}" placeholder="Aucun numéro" data-agent-id="${a.id}" />
+        container.innerHTML = data.map(a => `
+          <div class="bg-slate-950/50 border border-slate-800 p-3 rounded-xl flex flex-col gap-2 hover:border-emerald-500/30 transition group">
+            <div class="flex justify-between items-start">
+              <div>
+                <div class="text-xs font-bold text-emerald-400 uppercase tracking-wide">${a.pays}</div>
+                <div class="text-xs text-slate-400 font-medium">${a.operateur}</div>
+              </div>
+              <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition">
+                <button onclick="supprimerAgent('${a.id}')" class="text-slate-500 hover:text-red-400 p-1"><i class="ph ph-trash"></i></button>
+              </div>
             </div>
-            <button class="btn btn-outline" style="padding:0.6rem 1rem;" onclick="sauvegarderAgent('${a.id}', this)">OK</button>
+            <div class="flex gap-2 items-center">
+              <input type="text" value="${a.numero || ''}" class="flex-1 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white focus:border-emerald-500 outline-none" id="input-agent-${a.id}">
+              <button onclick="sauverAgent('${a.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-1 rounded font-medium transition">OK</button>
+            </div>
           </div>
         `).join('');
       } catch (e) { console.error(e); }
     }
 
-    async function sauvegarderAgent(id, bouton) {
-      const input = document.querySelector(`input[data-agent-id="${id}"]`);
-      bouton.textContent = '…';
+    async function sauverAgent(id) {
+      const input = document.getElementById(`input-agent-${id}`);
+      const btn = input.nextElementSibling;
+      const oldText = btn.textContent;
+      btn.textContent = '...';
       try {
-        await enregistrerAgent(id, { numero: input.value, actif: true });
-        bouton.textContent = '✓';
-        setTimeout(() => (bouton.textContent = 'OK'), 1200);
-      } catch (e) {
-        alert(e.message);
-        bouton.textContent = 'OK';
-      }
+        await enregistrerAgent(id, { numero: input.value });
+        btn.textContent = '✓';
+        setTimeout(() => btn.textContent = oldText, 1500);
+      } catch (e) { alert("Erreur: " + e.message); btn.textContent = oldText; }
     }
 
-    document.getElementById('form-config').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const messageEl = document.getElementById('config-message');
+    async function supprimerAgent(id) {
+      if(!confirm("Supprimer cet agent ?")) return;
       try {
-        await enregistrerConfig({
-          taux_achat: document.getElementById('cfg-taux-achat').value,
-          taux_vente: document.getElementById('cfg-taux-vente').value,
-          marge_beneficiaire: document.getElementById('cfg-marge').value,
-          adresse_usdt: document.getElementById('cfg-adresse').value,
-          reseau_usdt: document.getElementById('cfg-reseau').value,
-        });
-        messageEl.textContent = 'Configuration enregistrée avec succès.';
-        messageEl.style.color = '#26a17b';
-        messageEl.classList.remove('hidden');
-      } catch (e) {
-        messageEl.textContent = e.message;
-        messageEl.style.color = '#f2586b';
-        messageEl.classList.remove('hidden');
-      }
+        await supprimerAgent(id); // Fonction depuis admin.js
+        chargerAgentsUI();
+      } catch(e) { alert("Erreur suppression"); }
+    }
+
+    // Ajout Agent
+    function ouvrirModalAgent() { document.getElementById('modale-agent').classList.remove('hidden'); }
+    function fermerModalAgent() { document.getElementById('modale-agent').classList.add('hidden'); }
+    document.getElementById('form-nouvel-agent').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const pays = document.getElementById('new-agent-pays').value;
+      const op = document.getElementById('new-agent-operateur').value;
+      const num = document.getElementById('new-agent-numero').value;
+      try {
+        await ajouterAgent({ pays, operateur: op, numero: num });
+        fermerModalAgent();
+        chargerAgentsUI();
+        alert("Agent ajouté !");
+      } catch(err) { alert("Erreur: " + err.message); }
     });
 
-    // --- Initialisation ---
-    rafraichirBenefices();
+    // --- CONFIG FORM ---
+    document.getElementById('form-config').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector('button');
+      btn.textContent = 'Enregistrement...';
+      try {
+        await enregistrerConfig({
+          taux_achat_client: parseFloat(document.getElementById('cfg-taux-achat').value),
+          taux_vente_client: parseFloat(document.getElementById('cfg-taux-vente').value),
+          adresse_usdt_reception: document.getElementById('cfg-adresse').value
+        });
+        alert("Configuration sauvegardée !");
+      } catch(err) { alert("Erreur: " + err.message); }
+      btn.textContent = 'Sauvegarder';
+    });
+
+    // --- INIT ---
+    rafraichirStats();
     rafraichirTransactions();
+    chargerAgentsUI();
+    setInterval(() => { rafraichirTransactions(); rafraichirStats(); }, 30000); // Auto-refresh 30s
   </script>
 </body>
 </html>
