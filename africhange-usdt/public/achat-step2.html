@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Acheter des USDT — Étape 2 · Paiement</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="min-h-screen flex items-center justify-center p-5">
+
+  <div class="w-full max-w-md entree-ecran">
+    <div class="flex items-center justify-between mb-4">
+      <a href="/achat-step1.html" class="text-sm text-slate-400 hover:text-slate-200">&larr; Retour</a>
+      <span class="text-xs text-slate-500">Étape 2 sur 5</span>
+    </div>
+
+    <div class="etapes mb-6" id="barre-etapes"></div>
+
+    <div class="card glow-achat p-7">
+      <h1 class="font-display text-2xl font-semibold mb-1">Envoyez votre paiement</h1>
+      <p class="text-sm text-slate-400 mb-6">Utilisez exactement les informations ci-dessous.</p>
+
+      <div class="rounded-2xl p-5 mb-5" style="background:var(--surface-alt); border:1px solid var(--border)">
+        <div class="flex justify-between text-sm mb-3">
+          <span class="text-slate-400">Opérateur</span>
+          <span id="op-nom" class="font-medium"></span>
+        </div>
+        <div class="flex justify-between text-sm mb-3">
+          <span class="text-slate-400">Numéro à créditer</span>
+          <span id="op-numero" class="font-medium font-display"></span>
+        </div>
+        <div class="flex justify-between text-sm mb-3">
+          <span class="text-slate-400">Montant à envoyer</span>
+          <span id="montant-fcfa" class="font-medium font-display"></span>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span class="text-slate-400">Vous recevrez</span>
+          <span id="montant-usdt" class="font-medium font-display" style="color:#26a17b"></span>
+        </div>
+      </div>
+
+      <ol class="text-sm text-slate-400 space-y-2 list-decimal list-inside mb-6">
+        <li>Ouvrez votre application Mobile Money.</li>
+        <li>Envoyez le montant exact indiqué ci-dessus vers le numéro affiché.</li>
+        <li>Conservez la confirmation de la transaction, elle vous sera demandée à l'étape suivante.</li>
+      </ol>
+
+      <p id="erreur" class="text-sm text-rose-400 hidden mb-3"></p>
+      <button id="btn-continuer" class="btn btn-primary w-full">J'ai envoyé l'argent</button>
+    </div>
+  </div>
+
+  <script src="/js/main.js"></script>
+  <script>
+    rendreEtapes(document.getElementById('barre-etapes'), 2);
+    const p = exigerParcours(['telephone', 'operateur', 'montant_usdt'], '/achat-step1.html');
+
+    document.getElementById('op-nom').textContent = p.operateur;
+    document.getElementById('op-numero').textContent = p.agent_numero || 'Numéro à venir — contactez le support';
+    document.getElementById('montant-usdt').textContent = `${p.montant_usdt} USDT`;
+    document.getElementById('montant-fcfa').textContent = p.taux_achat
+      ? `${(p.montant_usdt * p.taux_achat).toLocaleString('fr-FR')} FCFA`
+      : 'Calcul en cours…';
+
+    document.getElementById('btn-continuer').addEventListener('click', async () => {
+      const bouton = document.getElementById('btn-continuer');
+      const erreurEl = document.getElementById('erreur');
+      erreurEl.classList.add('hidden');
+      bouton.disabled = true;
+      bouton.textContent = 'Enregistrement…';
+
+      try {
+        // On ne crée la transaction en base qu'une seule fois : si l'utilisateur
+        // revient en arrière puis avance à nouveau, on réutilise l'id existant.
+        let transaction = p.transaction_id ? { id: p.transaction_id } : null;
+        if (!transaction) {
+          transaction = await creerTransaction(p);
+          ecrireParcours({ transaction_id: transaction.id });
+        }
+        window.location.href = '/achat-step3.html';
+      } catch (e) {
+        afficherErreur(erreurEl, e.message);
+        bouton.disabled = false;
+        bouton.textContent = "J'ai envoyé l'argent";
+      }
+    });
+  </script>
+</body>
+</html>

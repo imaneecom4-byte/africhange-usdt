@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vendre des USDT — Étape 3 · Preuve de transaction</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="min-h-screen flex items-center justify-center p-5">
+
+  <div class="w-full max-w-md entree-ecran">
+    <div class="flex items-center justify-between mb-4">
+      <a href="/vente-step2.html" class="text-sm text-slate-400 hover:text-slate-200">&larr; Retour</a>
+      <span class="text-xs text-slate-500">Étape 3 sur 5</span>
+    </div>
+
+    <div class="etapes mb-6" id="barre-etapes"></div>
+
+    <div class="card glow-vente p-7">
+      <h1 class="font-display text-2xl font-semibold mb-1">Preuve de transaction</h1>
+      <p class="text-sm text-slate-400 mb-6">Indiquez le hash (TxID) de votre transaction crypto.</p>
+
+      <label class="text-xs text-slate-400 mb-1 block">Hash de transaction (TxID)</label>
+      <input type="text" id="txid" class="champ mb-4" placeholder="Ex : 0x8f3c...a91d" required />
+
+      <label for="fichier-preuve" id="zone-depot" class="block border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition mb-4" style="border-color:var(--border)">
+        <div class="text-2xl mb-2">📎</div>
+        <p class="text-sm text-slate-300" id="texte-depot">Ajouter une capture d'écran (optionnel)</p>
+        <input type="file" id="fichier-preuve" accept="image/*" class="hidden" />
+      </label>
+
+      <p id="erreur" class="text-sm text-rose-400 hidden mb-3"></p>
+      <button id="btn-envoyer" class="btn w-full" style="background:linear-gradient(135deg,#f5b942,#c98a1c); color:#1a1000;">Envoyer la preuve</button>
+    </div>
+  </div>
+
+  <script src="/js/main.js"></script>
+  <script>
+    rendreEtapes(document.getElementById('barre-etapes'), 3);
+    const p = exigerParcours(['transaction_id'], '/vente-step1.html');
+
+    const input = document.getElementById('fichier-preuve');
+    input.addEventListener('change', () => {
+      if (input.files[0]) document.getElementById('texte-depot').textContent = input.files[0].name;
+    });
+
+    document.getElementById('btn-envoyer').addEventListener('click', async () => {
+      const bouton = document.getElementById('btn-envoyer');
+      const erreurEl = document.getElementById('erreur');
+      erreurEl.classList.add('hidden');
+
+      const txid = document.getElementById('txid').value.trim();
+      if (!txid) {
+        return afficherErreur(erreurEl, 'Veuillez indiquer le hash (TxID) de votre transaction.');
+      }
+
+      bouton.disabled = true;
+      bouton.textContent = 'Envoi en cours…';
+      try {
+        await envoyerPreuve(p.transaction_id, { fichier: input.files[0], txid });
+        window.location.href = '/vente-step4.html';
+      } catch (e) {
+        afficherErreur(erreurEl, e.message);
+        bouton.disabled = false;
+        bouton.textContent = 'Envoyer la preuve';
+      }
+    });
+  </script>
+</body>
+</html>

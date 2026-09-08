@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vendre des USDT — Étape 1 · Vos informations</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="min-h-screen flex items-center justify-center p-5">
+
+  <div class="w-full max-w-md entree-ecran">
+    <div class="flex items-center justify-between mb-4">
+      <a href="/index.html" class="text-sm text-slate-400 hover:text-slate-200">&larr; Accueil</a>
+      <span class="text-xs text-slate-500">Étape 1 sur 5</span>
+    </div>
+
+    <div class="etapes mb-6" id="barre-etapes"></div>
+
+    <div class="card glow-vente p-7">
+      <h1 class="font-display text-2xl font-semibold mb-1">Vos informations</h1>
+      <p class="text-sm text-slate-400 mb-6">Indiquez où vous souhaitez recevoir vos francs CFA.</p>
+
+      <form id="form-etape1" class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs text-slate-400 mb-1 block">Prénom</label>
+            <input type="text" id="prenom" class="champ" placeholder="Ex : Kokou" required />
+          </div>
+          <div>
+            <label class="text-xs text-slate-400 mb-1 block">Nom</label>
+            <input type="text" id="nom" class="champ" placeholder="Ex : Adjovi" required />
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs text-slate-400 mb-1 block">Numéro de réception (Mobile Money)</label>
+          <input type="tel" id="numero_reception" class="champ" placeholder="Ex : +228 90 00 00 00" required />
+        </div>
+
+        <div>
+          <label class="text-xs text-slate-400 mb-1 block">Pays</label>
+          <select id="pays" class="champ" required>
+            <option value="">Sélectionnez votre pays</option>
+            <option>Burkina Faso</option>
+            <option>Côte d'Ivoire</option>
+            <option>Bénin</option>
+            <option>Togo</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="text-xs text-slate-400 mb-1 block">Opérateur de réception</label>
+          <div id="liste-operateurs" class="grid grid-cols-3 gap-2">
+            <p class="col-span-3 text-xs text-slate-500">Sélectionnez d'abord un pays.</p>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs text-slate-400 mb-1 block">Montant à vendre (USDT)</label>
+          <input type="number" min="1" step="0.01" id="montant_usdt" class="champ" placeholder="Ex : 30" required />
+          <p class="text-xs text-slate-500 mt-1" id="conversion-info">Taux de vente : chargement…</p>
+        </div>
+
+        <p id="erreur" class="text-sm text-rose-400 hidden"></p>
+
+        <button type="submit" class="btn w-full mt-2" style="background:linear-gradient(135deg,#f5b942,#c98a1c); color:#1a1000;">Suivant</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/main.js"></script>
+  <script>
+    rendreEtapes(document.getElementById('barre-etapes'), 1);
+
+    let agentsParPays = {};
+    let operateurSelectionne = null;
+    let tauxVente = null;
+
+    (async function initialiser() {
+      try {
+        const [config, agents] = await Promise.all([recupererConfig(), recupererAgents()]);
+        tauxVente = config.taux_vente;
+        document.getElementById('conversion-info').textContent = `Taux de vente : ${tauxVente} FCFA / USDT`;
+        agentsParPays = agents.reduce((acc, a) => {
+          (acc[a.pays] = acc[a.pays] || []).push(a);
+          return acc;
+        }, {});
+      } catch (e) {
+        afficherErreur(document.getElementById('erreur'), e.message);
+      }
+    })();
+
+    document.getElementById('pays').addEventListener('change', (e) => {
+      const conteneur = document.getElementById('liste-operateurs');
+      conteneur.innerHTML = '';
+      operateurSelectionne = null;
+      const agents = agentsParPays[e.target.value] || [];
+      if (agents.length === 0) {
+        conteneur.innerHTML = '<p class="col-span-3 text-xs text-slate-500">Aucun opérateur disponible pour ce pays.</p>';
+        return;
+      }
+      agents.forEach((agent) => {
+        conteneur.appendChild(creerCarteOperateur(agent, false, (a) => {
+          operateurSelectionne = a;
+          document.querySelectorAll('#liste-operateurs .choix-carte').forEach((el) => el.classList.remove('selectionne'));
+          event.currentTarget.classList.add('selectionne');
+        }));
+      });
+    });
+
+    document.getElementById('form-etape1').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const erreurEl = document.getElementById('erreur');
+      erreurEl.classList.add('hidden');
+
+      if (!operateurSelectionne) {
+        return afficherErreur(erreurEl, 'Veuillez sélectionner un opérateur de réception.');
+      }
+
+      ecrireParcours({
+        type: 'vente',
+        prenom: document.getElementById('prenom').value,
+        nom: document.getElementById('nom').value,
+        telephone: document.getElementById('numero_reception').value,
+        numero_reception: document.getElementById('numero_reception').value,
+        pays: document.getElementById('pays').value,
+        operateur_reception: operateurSelectionne.operateur,
+        montant_usdt: document.getElementById('montant_usdt').value,
+        taux_vente: tauxVente,
+      });
+
+      window.location.href = '/vente-step2.html';
+    });
+  </script>
+</body>
+</html>

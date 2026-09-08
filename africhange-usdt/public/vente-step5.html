@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vendre des USDT — Succès</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="min-h-screen flex items-center justify-center p-5">
+
+  <div class="w-full max-w-md entree-ecran">
+    <div class="etapes mb-6" id="barre-etapes"></div>
+
+    <div class="card p-10 flex flex-col items-center text-center" style="box-shadow: 0 0 0 1px rgba(245,185,66,0.15), 0 0 40px -8px #f5b942;">
+      <div class="cercle-succes mb-6" style="background:rgba(245,185,66,0.15); box-shadow:0 0 50px -10px #f5b942;">
+        <span class="text-4xl">✓</span>
+      </div>
+      <h1 class="font-display text-2xl font-semibold mb-2">Succès !</h1>
+      <p class="text-sm text-slate-400 max-w-xs mb-1">
+        L'argent a été envoyé sur votre numéro Mobile Money.
+      </p>
+      <p id="recap" class="text-sm font-medium mt-4" style="color:#f5b942"></p>
+
+      <a href="/index.html" class="btn btn-outline w-full mt-8">Retour à l'accueil</a>
+    </div>
+  </div>
+
+  <script src="/js/main.js"></script>
+  <script>
+    rendreEtapes(document.getElementById('barre-etapes'), 5);
+    const p = lireParcours();
+    if (p.montant_usdt) {
+      document.getElementById('recap').textContent = `Paiement envoyé vers ${p.numero_reception || 'votre numéro'} (${p.operateur_reception || ''})`;
+    }
+    reinitialiserParcours();
+  </script>
+</body>
+</html>
