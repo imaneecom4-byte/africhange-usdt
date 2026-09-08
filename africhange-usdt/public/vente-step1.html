@@ -8,38 +8,20 @@
 <link rel="stylesheet" href="/css/style.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  .operator-card {
-    transition: all 0.3s ease;
-    border: 2px solid transparent;
-  }
-  .operator-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-  }
-  .operator-card.selected {
-    border-color: #26a17b;
-    background: rgba(38, 161, 123, 0.1);
-  }
-  @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 10px rgba(38, 161, 123, 0.3); }
-    50% { box-shadow: 0 0 20px rgba(38, 161, 123, 0.6); }
-  }
-  .loading-pulse {
-    animation: pulse-glow 2s infinite;
-  }
+  .operator-card { transition: all 0.3s ease; border: 2px solid transparent; cursor: pointer; }
+  .operator-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+  .operator-card.selected { border-color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
+  .operator-logo { width: 40px; height: 40px; object-fit: contain; }
+  .input-group { position: relative; display: flex; align-items: center; }
+  .prefix-badge { position: absolute; left: 0; top: 0; bottom: 0; display: flex; align-items: center; padding-left: 1rem; pointer-events: none; color: #94a3b8; font-weight: 500; z-index: 10; }
+  .input-with-prefix { padding-left: 5rem !important; }
 </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
 
-  <!-- Header -->
   <header class="border-b border-slate-700 bg-slate-900/50 backdrop-blur sticky top-0 z-40">
     <div class="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-      <button onclick="window.location.href='/index.html'" class="flex items-center gap-2 text-slate-300 hover:text-white transition">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
-        Accueil
-      </button>
+      <button onclick="window.location.href='/index.html'" class="flex items-center gap-2 text-slate-300 hover:text-white transition">← Accueil</button>
       <div class="text-sm text-slate-400">Étape 1 sur 5</div>
     </div>
   </header>
@@ -51,6 +33,9 @@
         <h1 class="text-3xl font-bold mb-2">Vos informations</h1>
         <p class="text-slate-400">Indiquez où vous souhaitez recevoir vos francs CFA.</p>
       </div>
+
+      <!-- ZONE D'ERREUR -->
+      <div id="global-error" class="hidden bg-red-900/50 border border-red-500 text-red-200 p-4 rounded-lg mb-6"></div>
 
       <form id="form-vente-step1" class="space-y-6">
         
@@ -66,247 +51,285 @@
           </div>
         </div>
 
-        <!-- Numéro de réception -->
-        <div>
-          <label class="block text-sm font-medium text-slate-300 mb-2">Numéro de réception (Mobile Money)</label>
-          <input type="tel" id="numero-reception" class="champ bg-slate-900 border-slate-600 text-white placeholder-slate-500" placeholder="Ex : +228 90 00 00 00" required />
-        </div>
-
-        <!-- Pays -->
+        <!-- Pays (Déclencheur des indicateurs) -->
         <div>
           <label class="block text-sm font-medium text-slate-300 mb-2">Pays</label>
-          <select id="pays" class="champ bg-slate-900 border-slate-600 text-white" required>
+          <select id="pays" class="champ bg-slate-900 border-slate-600 text-white" required onchange="updatePhonePrefix()">
             <option value="">Sélectionnez votre pays</option>
-            <option value="Burkina Faso">🇧🇫 Burkina Faso</option>
-            <option value="Côte d'Ivoire">🇮 Côte d'Ivoire</option>
-            <option value="Bénin">🇯🇯 Bénin</option>
-            <option value="Togo">🇬 Togo</option>
+            <option value="Burkina Faso" data-prefix="+226">🇧🇫 Burkina Faso (+226)</option>
+            <option value="Côte d'Ivoire" data-prefix="+225">🇨🇮 Côte d'Ivoire (+225)</option>
+            <option value="Bénin" data-prefix="+229">🇯🇯 Bénin (+229)</option>
+            <option value="Togo" data-prefix="+228">🇹🇬 Togo (+228)</option>
           </select>
         </div>
 
-        <!-- Opérateurs disponibles (affichés dynamiquement) -->
-        <div id="operateurs-container" class="hidden">
-          <label class="block text-sm font-medium text-slate-300 mb-3">Opérateur de réception</label>
-          <div id="liste-operateurs" class="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <!-- Les opérateurs seront injectés ici par JavaScript -->
+        <!-- Numéro de réception avec indicateur dynamique -->
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-2">Numéro de réception (Mobile Money)</label>
+          <div class="input-group">
+            <span id="phone-prefix" class="prefix-badge hidden">+---</span>
+            <input type="tel" id="numero-reception" class="champ bg-slate-900 border-slate-600 text-white placeholder-slate-500 input-with-prefix" placeholder="70 00 00 00" disabled required />
           </div>
+          <p class="text-xs text-slate-500 mt-1">L'indicatif sera ajouté automatiquement.</p>
+        </div>
+
+        <!-- Confirmation Numéro -->
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-2">Confirmer le numéro</label>
+          <div class="input-group">
+            <span id="confirm-prefix" class="prefix-badge hidden">+---</span>
+            <input type="tel" id="confirm-reception" class="champ bg-slate-900 border-slate-600 text-white placeholder-slate-500 input-with-prefix" placeholder="70 00 00 00" disabled required />
+          </div>
+          <p id="phone-match-msg" class="text-xs text-emerald-400 mt-1 hidden">✓ Les numéros correspondent</p>
+          <p id="phone-mismatch-msg" class="text-xs text-red-400 mt-1 hidden">✗ Les numéros ne correspondent pas</p>
+        </div>
+
+        <!-- Opérateurs -->
+        <div id="operateurs-container" class="hidden">
+          <label class="block text-sm font-medium text-slate-300 mb-3">Réseau mobile</label>
+          <div id="liste-operateurs" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
           <input type="hidden" id="operateur-selectionne" required />
         </div>
 
-        <!-- Montant à vendre -->
+        <!-- Montant -->
         <div>
           <label class="block text-sm font-medium text-slate-300 mb-2">Montant à vendre (USDT)</label>
           <input type="number" step="0.01" id="montant-usdt" class="champ bg-slate-900 border-slate-600 text-white placeholder-slate-500" placeholder="Ex : 30" min="1" required />
-          <p id="taux-info" class="text-sm text-slate-400 mt-2">Taux de vente : <span id="taux-valeur">chargement...</span></p>
-          <p id="montant-fcfa" class="text-lg font-bold text-emerald-400 mt-1"></p>
+          <p id="taux-info" class="text-sm text-slate-400 mt-2">Taux de vente : <span id="taux-valeur" class="font-bold text-amber-400">...</span></p>
+          <p id="montant-fcfa" class="text-lg font-bold text-amber-400 mt-1"></p>
         </div>
 
-        <!-- Messages d'erreur -->
-        <div id="message-erreur" class="text-red-400 text-sm hidden"></div>
-
-        <!-- Bouton Suivant -->
-        <button type="submit" class="btn btn-primary w-full py-4 text-lg font-semibold">
-          Suivant →
+        <button type="submit" id="btn-suivant" class="btn btn-primary w-full py-4 text-lg font-semibold bg-amber-600 hover:bg-amber-500 relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+          <span id="btn-text">Suivant →</span>
+          <div id="btn-loader" class="hidden absolute inset-0 bg-black/20 flex items-center justify-center">
+            <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+          </div>
         </button>
       </form>
     </div>
   </main>
 
   <script>
-    // Configuration Supabase
+    // --- CONFIGURATION ---
     const SUPABASE_URL = 'https://qlsetlqyejwrhztbesto.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4';
     
     let supabase;
-    if (typeof window !== 'undefined' && typeof window.supabase !== 'undefined') {
-      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    }
+    let configData = null;
+    let agentsData = [];
+    let currentPrefix = "";
 
-    let config = null;
-    let agents = [];
+    // Logos SVG
+    const operatorLogos = {
+      'Orange Money': `<svg viewBox="0 0 100 100" class="operator-logo"><rect width="100" height="100" fill="#ff7900"/><path d="M30 30 L70 30 L70 70 L30 70 Z" fill="white"/><text x="50" y="55" font-size="20" text-anchor="middle" fill="#ff7900" font-weight="bold">OM</text></svg>`,
+      'Moov Money': `<svg viewBox="0 0 100 100" class="operator-logo"><rect width="100" height="100" fill="#0066cc"/><circle cx="50" cy="50" r="30" fill="white"/><text x="50" y="55" font-size="18" text-anchor="middle" fill="#0066cc" font-weight="bold">MM</text></svg>`,
+      'MTN Money': `<svg viewBox="0 0 100 100" class="operator-logo"><rect width="100" height="100" fill="#ffcc00"/><path d="M20 30 L80 30 L80 70 L20 70 Z" fill="#000"/><text x="50" y="55" font-size="16" text-anchor="middle" fill="#ffcc00" font-weight="bold">MTN</text></svg>`,
+      'Wave': `<svg viewBox="0 0 100 100" class="operator-logo"><rect width="100" height="100" fill="#1dc4ff"/><path d="M30 40 Q50 20 70 40 T90 60" stroke="white" stroke-width="4" fill="none"/><text x="50" y="75" font-size="20" text-anchor="middle" fill="white" font-weight="bold">W</text></svg>`,
+      'Celtiis': `<svg viewBox="0 0 100 100" class="operator-logo"><rect width="100" height="100" fill="#9333ea"/><circle cx="50" cy="50" r="25" fill="white"/><text x="50" y="55" font-size="20" text-anchor="middle" fill="#9333ea" font-weight="bold">C</text></svg>`,
+      'Mix Bay Yas': `<svg viewBox="0 0 100 100" class="operator-logo"><rect width="100" height="100" fill="#22c55e"/><path d="M25 25 L75 25 L75 75 L25 75 Z" fill="white"/><text x="50" y="55" font-size="14" text-anchor="middle" fill="#22c55e" font-weight="bold">MBY</text></svg>`
+    };
 
-    // Charger la configuration et les agents au démarrage
-    async function chargerDonneesInitiales() {
+    function initApp() {
       try {
-        // Charger la config
-        const { data: configData, error: configError } = await supabase
-          .from('config')
-          .select('*')
-          .limit(1)
-          .single();
-
-        if (configError && configError.code !== 'PGRST116') {
-          throw configError;
-        }
-
-        config = configData || {
-          taux_vente_client: 730,
-          adresse_usdt_reception: '0x5da17b728ab2d61ab273a1844b4ce0db4c545f95'
-        };
-
-        document.getElementById('taux-valeur').textContent = `${config.taux_vente_client} FCFA/USDT`;
-
-        // Charger les agents
-        const { data: agentsData, error: agentsError } = await supabase
-          .from('agents')
-          .select('*')
-          .eq('actif', true);
-
-        if (agentsError) throw agentsError;
-        agents = agentsData || [];
-
-      } catch (error) {
-        console.error('Erreur chargement données:', error);
-        const messageEl = document.getElementById('message-erreur');
-        messageEl.textContent = 'Impossible de charger les données. Veuillez réessayer.';
-        messageEl.classList.remove('hidden');
+        if (typeof window.supabase === 'undefined') throw new Error("Supabase non chargé.");
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        chargerDonnees();
+      } catch (err) {
+        afficherErreur(err.message);
       }
     }
 
-    // Afficher les opérateurs selon le pays sélectionné
-    document.getElementById('pays').addEventListener('change', function() {
-      const paysSelectionne = this.value;
-      const container = document.getElementById('operateurs-container');
-      const listeOperateurs = document.getElementById('liste-operateurs');
-      
-      if (!paysSelectionne) {
-        container.classList.add('hidden');
-        return;
-      }
+    async function chargerDonnees() {
+      try {
+        const { data: cfg, error: errCfg } = await supabase.from('config').select('*').limit(1).single();
+        if (errCfg) throw new Error("Impossible de charger les taux.");
+        configData = cfg;
+        document.getElementById('taux-valeur').textContent = `${configData.taux_vente_client} FCFA/USDT`;
 
-      // Filtrer les agents pour ce pays
-      const agentsPays = agents.filter(agent => agent.pays === paysSelectionne);
+        const { data: agt, error: errAgt } = await supabase.from('agents').select('*').eq('actif', true);
+        if (errAgt) throw new Error("Impossible de charger les opérateurs.");
+        agentsData = agt || [];
+      } catch (err) {
+        console.error(err);
+        afficherErreur(err.message);
+      }
+    }
+
+    function afficherErreur(msg) {
+      const el = document.getElementById('global-error');
+      document.getElementById('error-msg').textContent = msg;
+      el.classList.remove('hidden');
+    }
+
+    // --- GESTION DU PAYS ET INDICATEURS ---
+    function updatePhonePrefix() {
+      const select = document.getElementById('pays');
+      const option = select.options[select.selectedIndex];
+      const prefix = option.getAttribute('data-prefix') || "";
+      currentPrefix = prefix;
+
+      const inputs = ['numero-reception', 'confirm-reception'];
+      const badges = ['phone-prefix', 'confirm-prefix'];
+
+      if (prefix) {
+        inputs.forEach(id => {
+          const el = document.getElementById(id);
+          el.disabled = false;
+          el.placeholder = prefix + " XX XX XX XX";
+        });
+        badges.forEach(id => {
+          const el = document.getElementById(id);
+          el.textContent = prefix;
+          el.classList.remove('hidden');
+        });
+      } else {
+        inputs.forEach(id => document.getElementById(id).disabled = true);
+        badges.forEach(id => document.getElementById(id).classList.add('hidden'));
+      }
       
+      validateForm();
+    }
+
+    // --- VALIDATION EN TEMPS RÉEL ---
+    function validatePhoneMatch() {
+      const num1 = document.getElementById('numero-reception').value.trim();
+      const num2 = document.getElementById('confirm-reception').value.trim();
+      const matchMsg = document.getElementById('phone-match-msg');
+      const mismatchMsg = document.getElementById('phone-mismatch-msg');
+
+      if (num1 && num2) {
+        if (num1 === num2) {
+          matchMsg.classList.remove('hidden');
+          mismatchMsg.classList.add('hidden');
+          return true;
+        } else {
+          matchMsg.classList.add('hidden');
+          mismatchMsg.classList.remove('hidden');
+          return false;
+        }
+      }
+      matchMsg.classList.add('hidden');
+      mismatchMsg.classList.add('hidden');
+      return false;
+    }
+
+    function validateForm() {
+      const btn = document.getElementById('btn-suivant');
+      const phoneOk = validatePhoneMatch();
+      const operateurOk = document.getElementById('operateur-selectionne').value !== "";
+      const paysOk = document.getElementById('pays').value !== "";
+      const montantOk = parseFloat(document.getElementById('montant-usdt').value) > 0;
+
+      if (phoneOk && operateurOk && paysOk && montantOk) {
+        btn.disabled = false;
+      } else {
+        btn.disabled = true;
+      }
+    }
+
+    // Ajout des écouteurs d'événements pour la validation
+    ['numero-reception', 'confirm-reception'].forEach(id => {
+      document.getElementById(id).addEventListener('input', validateForm);
+    });
+    document.getElementById('montant-usdt').addEventListener('input', function() {
+      if (parseFloat(this.value) > 0 && configData) {
+        document.getElementById('montant-fcfa').textContent = `Vous recevrez : ${(this.value * configData.taux_vente_client).toLocaleString('fr-FR')} FCFA`;
+      } else {
+        document.getElementById('montant-fcfa').textContent = '';
+      }
+      validateForm();
+    });
+
+    // --- GESTION OPÉRATEURS ---
+    document.getElementById('pays').addEventListener('change', function() {
+      updatePhonePrefix();
+      const pays = this.value;
+      const container = document.getElementById('operateurs-container');
+      const liste = document.getElementById('liste-operateurs');
+      
+      if (!pays) { container.classList.add('hidden'); return; }
+
+      const agentsPays = agentsData.filter(a => a.pays === pays);
       if (agentsPays.length === 0) {
-        listeOperateurs.innerHTML = '<p class="text-slate-400 col-span-full text-center">Aucun opérateur disponible pour ce pays.</p>';
+        liste.innerHTML = '<p class="text-slate-400 col-span-full text-center">Aucun opérateur disponible.</p>';
         container.classList.remove('hidden');
         return;
       }
 
-      // Générer les cartes d'opérateurs avec logos
-      listeOperateurs.innerHTML = agentsPays.map(agent => {
-        const logoClass = getLogoClass(agent.operateur);
+      liste.innerHTML = agentsPays.map(agent => {
+        const logoSVG = operatorLogos[agent.operateur] || operatorLogos['Orange Money'];
         return `
-          <div class="operator-card bg-slate-900 border border-slate-700 rounded-xl p-4 cursor-pointer" 
+          <div class="operator-card bg-slate-900 border border-slate-700 rounded-xl p-3 cursor-pointer hover:border-amber-500 transition text-center" 
                onclick="selectionnerOperateur('${agent.operateur}', this)">
-            <div class="flex flex-col items-center text-center">
-              <div class="${logoClass} w-12 h-12 rounded-full flex items-center justify-center mb-2 text-lg font-bold">
-                ${getLogoInitial(agent.operateur)}
-              </div>
-              <p class="font-medium text-white">${agent.operateur}</p>
-              <p class="text-xs text-slate-400 mt-1">${agent.numero || 'Non spécifié'}</p>
+            <div class="flex flex-col items-center">
+              <div class="mb-2 bg-white rounded-lg p-1.5 shadow-md">${logoSVG}</div>
+              <p class="font-medium text-white text-xs">${agent.operateur}</p>
             </div>
           </div>
         `;
       }).join('');
-
       container.classList.remove('hidden');
+      validateForm();
     });
 
-    function selectionnerOperateur(operateur, element) {
-      // Retirer la sélection précédente
-      document.querySelectorAll('.operator-card').forEach(card => {
-        card.classList.remove('selected');
+    function selectionnerOperateur(op, el) {
+      document.querySelectorAll('.operator-card').forEach(c => {
+        c.classList.remove('border-amber-500', 'bg-slate-800');
+        c.classList.add('border-slate-700', 'bg-slate-900');
       });
-      
-      // Ajouter la sélection actuelle
-      element.classList.add('selected');
-      document.getElementById('operateur-selectionne').value = operateur;
+      el.classList.remove('border-slate-700', 'bg-slate-900');
+      el.classList.add('border-amber-500', 'bg-slate-800');
+      document.getElementById('operateur-selectionne').value = op;
+      validateForm();
     }
 
-    function getLogoClass(operateur) {
-      const logos = {
-        'Orange Money': 'bg-orange-500 text-white',
-        'Moov Money': 'bg-blue-500 text-white',
-        'MTN Money': 'bg-yellow-500 text-black',
-        'Wave': 'bg-cyan-500 text-white',
-        'Celtiis': 'bg-purple-500 text-white',
-        'Mix Bay Yas': 'bg-green-500 text-white'
-      };
-      return logos[operateur] || 'bg-slate-600 text-white';
-    }
-
-    function getLogoInitial(operateur) {
-      const initials = {
-        'Orange Money': 'OM',
-        'Moov Money': 'MM',
-        'MTN Money': 'MTN',
-        'Wave': 'W',
-        'Celtiis': 'C',
-        'Mix Bay Yas': 'MBY'
-      };
-      return initials[operateur] || operateur.substring(0, 2).toUpperCase();
-    }
-
-    // Calculer le montant FCFA en temps réel
-    document.getElementById('montant-usdt').addEventListener('input', function() {
-      const montantUSDT = parseFloat(this.value) || 0;
-      if (montantUSDT > 0 && config) {
-        const montantFCFA = montantUSDT * config.taux_vente_client;
-        document.getElementById('montant-fcfa').textContent = 
-          `Vous recevrez : ${montantFCFA.toLocaleString('fr-FR')} FCFA`;
-      } else {
-        document.getElementById('montant-fcfa').textContent = '';
-      }
-    });
-
-    // Gestion de la soumission du formulaire
+    // --- SOUMISSION ---
     document.getElementById('form-vente-step1').addEventListener('submit', async function(e) {
       e.preventDefault();
-      
-      const messageEl = document.getElementById('message-erreur');
-      messageEl.classList.add('hidden');
-
-      // Validation
-      const operateurSelectionne = document.getElementById('operateur-selectionne').value;
-      if (!operateurSelectionne) {
-        messageEl.textContent = 'Veuillez sélectionner un opérateur de réception.';
-        messageEl.classList.remove('hidden');
+      if (!validatePhoneMatch()) {
+        alert("Veuillez corriger les erreurs de confirmation avant de continuer.");
         return;
       }
 
-      // Récupérer les données du formulaire
+      const btn = document.getElementById('btn-suivant');
+      const loader = document.getElementById('btn-loader');
+      const txt = document.getElementById('btn-text');
+      
+      btn.disabled = true;
+      txt.classList.add('opacity-0');
+      loader.classList.remove('hidden');
+
+      const fullNumber = currentPrefix + document.getElementById('numero-reception').value.trim();
+
       const formData = {
         prenom: document.getElementById('prenom').value,
         nom: document.getElementById('nom').value,
-        numero_reception: document.getElementById('numero-reception').value,
+        numero_telephone: fullNumber,
         pays: document.getElementById('pays').value,
-        operateur: operateurSelectionne,
+        operateur: document.getElementById('operateur-selectionne').value,
         montant_usdt: parseFloat(document.getElementById('montant-usdt').value),
         type_transaction: 'vente',
-        statut: 'en_attente'
+        statut: 'en_attente',
+        taux_applique: configData.taux_vente_client,
+        adresse_wallet_usdt: configData.adresse_usdt_reception
       };
-
-      // Calculer le montant FCFA
-      formData.montant_fcfa = formData.montant_usdt * config.taux_vente_client;
-      formData.taux_applique = config.taux_vente_client;
-      formData.adresse_wallet_usdt = config.adresse_usdt_reception;
+      formData.montant_fcfa = formData.montant_usdt * formData.taux_applique;
 
       try {
-        // Sauvegarder la transaction dans Supabase
-        const { data, error } = await supabase
-          .from('transactions')
-          .insert([formData])
-          .select()
-          .single();
-
+        const { data, error } = await supabase.from('transactions').insert([formData]).select().single();
         if (error) throw error;
-
-        // Stocker les données pour les étapes suivantes
         sessionStorage.setItem('transaction_vente', JSON.stringify(data));
-        
-        // Rediriger vers l'étape 2
         window.location.href = '/vente-step2.html';
-        
-      } catch (error) {
-        console.error('Erreur sauvegarde transaction:', error);
-        messageEl.textContent = 'Une erreur est survenue. Veuillez réessayer.';
-        messageEl.classList.remove('hidden');
+      } catch (err) {
+        console.error(err);
+        btn.disabled = false;
+        txt.classList.remove('opacity-0');
+        loader.classList.add('hidden');
+        afficherErreur("Échec de la sauvegarde : " + err.message);
       }
     });
 
-    // Initialisation
-    chargerDonneesInitiales();
+    initApp();
   </script>
 </body>
 </html>
