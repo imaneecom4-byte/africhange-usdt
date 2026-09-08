@@ -1,10 +1,10 @@
 // =====================================================================
-// AfriChange USDT — admin.js (VERSION CORRIGÉE)
+// AfriChange USDT — admin.js (VERSION CORRIGÉE AVEC TES CLÉS)
 // Authentification Supabase et gestion du tableau de bord.
 // =====================================================================
 
-// ⚠️ IMPORTANT : Remplace ces deux lignes par TES vraies valeurs Supabase
-const SUPABASE_URL = 'https://qlsetlqyejwrhztbesto.supabase.co/rest/v1/'; 
+// ⚠️ CONFIGURATION SUPABASE (TES VRAIES CLÉS SONT DÉJÀ INSÉRÉES)
+const SUPABASE_URL = 'https://qlsetlqyejwrhztbesto.supabase.co'; 
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4'; 
 
 // Initialisation du client Supabase
