@@ -172,3 +172,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   outline: 2px solid var(--achat);
   outline-offset: 2px;
 }
+
+/* --- CACHER LE BADGE NETLIFY --- */
+#nf-badge { 
+    display: none !important; 
+}
