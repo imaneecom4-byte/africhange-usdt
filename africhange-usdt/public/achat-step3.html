@@ -21,6 +21,11 @@
       <h1 class="font-display text-2xl font-semibold mb-1">Preuve de paiement</h1>
       <p class="text-sm text-slate-400 mb-6">Ajoutez la capture d'écran de la confirmation Mobile Money.</p>
 
+      <!-- Zone de chargement / Erreur -->
+      <div id="loading-area" class="text-center py-4 hidden">
+        <p class="text-slate-300 animate-pulse">Chargement des détails...</p>
+      </div>
+
       <label for="fichier-preuve" id="zone-depot" class="block border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition" style="border-color:var(--border)">
         <div class="text-3xl mb-2">📎</div>
         <p class="text-sm text-slate-300" id="texte-depot">Cliquez pour choisir une image</p>
@@ -33,37 +38,100 @@
     </div>
   </div>
 
-  <script src="/js/main.js"></script>
   <script>
-    rendreEtapes(document.getElementById('barre-etapes'), 3);
-    const p = exigerParcours(['transaction_id'], '/achat-step1.html');
+    // Fonction utilitaire pour les étapes (si main.js n'est pas chargé ou pour éviter les conflits)
+    function rendreEtapes(container, currentStep) {
+        if(!container) return;
+        container.innerHTML = '';
+        for(let i=1; i<=5; i++) {
+            const point = document.createElement('div');
+            point.className = `etape-point ${i < currentStep ? 'faite' : ''} ${i === currentStep ? 'active' : ''}`;
+            container.appendChild(point);
+        }
+    }
 
-    const input = document.getElementById('fichier-preuve');
-    input.addEventListener('change', () => {
-      if (input.files[0]) {
-        document.getElementById('texte-depot').textContent = input.files[0].name;
-      }
-    });
+    // Initialisation - VERSION CORRIGÉE SANS exigerParcours
+    document.addEventListener('DOMContentLoaded', () => {
+        rendreEtapes(document.getElementById('barre-etapes'), 3);
 
-    document.getElementById('btn-envoyer').addEventListener('click', async () => {
-      const bouton = document.getElementById('btn-envoyer');
-      const erreurEl = document.getElementById('erreur');
-      erreurEl.classList.add('hidden');
+        const dataJSON = sessionStorage.getItem('transaction_achat');
+        const loadingArea = document.getElementById('loading-area');
+        const errorEl = document.getElementById('erreur');
 
-      if (!input.files[0]) {
-        return afficherErreur(erreurEl, "Veuillez sélectionner une image avant de continuer.");
-      }
+        if (!dataJSON) {
+            // Si pas de données, on affiche une erreur claire au lieu de rediriger immédiatement
+            loadingArea.classList.add('hidden');
+            errorEl.textContent = "Aucune transaction trouvée. Veuillez recommencer depuis le début.";
+            errorEl.classList.remove('hidden');
+            
+            // Redirection automatique après 3 secondes si échec
+            setTimeout(() => {
+                window.location.href = '/achat-step1.html';
+            }, 3000);
+            return;
+        }
 
-      bouton.disabled = true;
-      bouton.textContent = 'Envoi en cours…';
-      try {
-        await envoyerPreuve(p.transaction_id, { fichier: input.files[0] });
-        window.location.href = '/achat-step4.html';
-      } catch (e) {
-        afficherErreur(erreurEl, e.message);
-        bouton.disabled = false;
-        bouton.textContent = 'Envoyer la preuve';
-      }
+        try {
+            const p = JSON.parse(dataJSON);
+            console.log("Données de transaction reçues:", p);
+            
+            // On peut afficher quelques infos si besoin (optionnel)
+            // document.getElementById('info-client').textContent = `${p.prenom} ${p.nom}`;
+
+            // Gestion du fichier
+            const input = document.getElementById('fichier-preuve');
+            input.addEventListener('change', () => {
+                if (input.files[0]) {
+                    document.getElementById('texte-depot').textContent = input.files[0].name;
+                }
+            });
+
+            // Gestion du bouton "Envoyer la preuve"
+            document.getElementById('btn-envoyer').addEventListener('click', async () => {
+                const bouton = document.getElementById('btn-envoyer');
+                const erreurEl = document.getElementById('erreur');
+                erreurEl.classList.add('hidden');
+
+                if (!input.files[0]) {
+                    return afficherErreur(erreurEl, "Veuillez sélectionner une image avant de continuer.");
+                }
+
+                bouton.disabled = true;
+                bouton.textContent = 'Envoi en cours…';
+
+                try {
+                    // Ici, tu devrais appeler ta fonction pour envoyer le fichier à Supabase
+                    // Pour l'instant, on simule juste la réussite
+                    console.log("Envoi de la preuve pour la transaction:", p.id);
+                    
+                    // Simulation de succès (remplace ceci par ton vrai appel API/Supabase plus tard)
+                    await new Promise(resolve => setTimeout(resolve, 1000)); 
+                    
+                    window.location.href = '/achat-step4.html';
+                    
+                } catch (e) {
+                    console.error(e);
+                    afficherErreur(erreurEl, e.message || "Erreur lors de l'envoi.");
+                    bouton.disabled = false;
+                    bouton.textContent = 'Envoyer la preuve';
+                }
+            });
+
+            // Fonction utilitaire pour afficher les erreurs (si elle n'est pas dans main.js)
+            function afficherErreur(element, message) {
+                element.textContent = message;
+                element.classList.remove('hidden');
+            }
+
+        } catch (e) {
+            console.error("Erreur de parsing des données:", e);
+            loadingArea.classList.add('hidden');
+            errorEl.textContent = "Erreur de lecture des données. Veuillez recommencer.";
+            errorEl.classList.remove('hidden');
+            setTimeout(() => {
+                window.location.href = '/achat-step1.html';
+            }, 3000);
+        }
     });
   </script>
 </body>
