@@ -59,7 +59,7 @@
             <option value="Burkina Faso" data-prefix="+226">🇧🇫 Burkina Faso (+226)</option>
             <option value="Côte d'Ivoire" data-prefix="+225">🇨🇮 Côte d'Ivoire (+225)</option>
             <option value="Bénin" data-prefix="+229">🇯 Bénin (+229)</option>
-            <option value="Togo" data-prefix="+228">🇬 Togo (+228)</option>
+            <option value="Togo" data-prefix="+228">🇹 Togo (+228)</option>
           </select>
         </div>
 
@@ -84,7 +84,7 @@
           <p id="phone-mismatch-msg" class="text-xs text-red-400 mt-1 hidden">✗ Les numéros ne correspondent pas</p>
         </div>
 
-        <!-- Opérateurs (Affichés dynamiquement avec VRAIS LOGOS INTÉGRÉS) -->
+        <!-- Opérateurs (Affichés dynamiquement avec TES VRAIS LOGOS) -->
         <div id="operateurs-container" class="hidden">
           <label class="block text-sm font-medium text-slate-300 mb-3">Réseau mobile</label>
           <div id="liste-operateurs" class="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -112,7 +112,7 @@
           <label class="block text-sm font-medium text-slate-300 mb-2">Confirmer l'adresse USDT</label>
           <input type="text" id="confirm-wallet" class="champ bg-slate-900 border-slate-600 text-white placeholder-slate-500 font-mono text-sm" placeholder="Ex : 0x..." required oninput="validateWallet()" />
           <p id="wallet-match-msg" class="text-xs text-emerald-400 mt-1 hidden">✓ Les adresses correspondent</p>
-          <p id="wallet-mismatch-msg" class="text-xs text-red-400 mt-1 hidden"> Les adresses ne correspondent pas</p>
+          <p id="wallet-mismatch-msg" class="text-xs text-red-400 mt-1 hidden">✗ Les adresses ne correspondent pas</p>
         </div>
 
         <button type="submit" id="btn-suivant" class="btn btn-primary w-full py-4 text-lg font-semibold relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed" disabled>
@@ -135,16 +135,14 @@
     let agentsData = [];
     let currentPrefix = "";
 
-    // VRAIS LOGOS EN BASE64 (INTÉGRÉS DIRECTEMENT - PAS BESOIN D'HÉBERGER)
-    // Note: Ce sont des placeholders colorés. Pour les vrais logos, il faudrait les convertir en base64.
-    // Pour l'instant, on utilise des couleurs distinctives pour chaque opérateur.
+    // TES VRAIS LOGOS (URLs directes Imgur)
     const operatorLogos = {
-      'Orange Money': `<div class="operator-logo" style="background:#ff7900; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:12px;">OM</div>`,
-      'Moov Money': `<div class="operator-logo" style="background:#0066cc; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:12px;">MM</div>`,
-      'MTN Money': `<div class="operator-logo" style="background:#ffcc00; display:flex; align-items:center; justify-content:center; color:black; font-weight:bold; font-size:12px;">MTN</div>`,
-      'Wave': `<div class="operator-logo" style="background:#1dc4ff; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:12px;">W</div>`,
-      'Mixx By Yas': `<div class="operator-logo" style="background:#003366; display:flex; align-items:center; justify-content:center; color:#ffcc00; font-weight:bold; font-size:10px;">MIXX</div>`,
-      'Celtiis': `<div class="operator-logo" style="background:#9333ea; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:12px;">C</div>`
+      'Orange Money': `<img src="https://i.imgur.com/7OWiQyY.png" alt="Orange Money" class="operator-logo" />`,
+      'Moov Money': `<img src="https://i.imgur.com/JkSWhCp.png" alt="Moov Money" class="operator-logo" />`,
+      'MTN Money': `<img src="https://i.imgur.com/P6YiORq.png" alt="MTN Money" class="operator-logo" />`,
+      'Wave': `<img src="https://i.imgur.com/rxZM1Mx.png" alt="Wave" class="operator-logo" />`,
+      'Mixx By Yas': `<img src="https://i.imgur.com/oScDtsK.png" alt="Mixx By Yas" class="operator-logo" />`,
+      'Celtiis': `<img src="https://i.imgur.com/oScDtsK.png" alt="Celtiis" class="operator-logo" />` // Même logo par défaut si manquant
     };
 
     // DONNÉES DE SECOURS (SI SUPABASE ÉCHEC)
@@ -375,8 +373,10 @@
       validateForm();
     }
 
+    // --- SOUMISSION CORRIGÉE ---
     document.getElementById('form-achat-step1').addEventListener('submit', async function(e) {
       e.preventDefault();
+      
       if (!validatePhoneMatch() || !validateWallet()) {
         alert("Veuillez corriger les erreurs de confirmation avant de continuer.");
         return;
@@ -391,40 +391,70 @@
       loader.classList.remove('hidden');
 
       const fullNumber = currentPrefix + document.getElementById('numero-telephone').value.trim();
+      const montantUSDT = parseFloat(document.getElementById('montant-usdt').value);
+      const montantFCFA = montantUSDT * currentRate;
 
-      const formData = {
+      // Données à envoyer à Supabase ET à stocker en session
+      const transactionData = {
         prenom: document.getElementById('prenom').value,
         nom: document.getElementById('nom').value,
         numero_telephone: fullNumber,
         pays: document.getElementById('pays').value,
         operateur: document.getElementById('operateur-selectionne').value,
-        montant_usdt: parseFloat(document.getElementById('montant-usdt').value),
+        montant_usdt: montantUSDT,
+        montant_fcfa: montantFCFA,
         adresse_wallet_usdt: document.getElementById('adresse-wallet').value,
         type_transaction: 'achat',
         statut: 'en_attente',
         taux_applique: currentRate
       };
-      formData.montant_fcfa = formData.montant_usdt * formData.taux_applique;
+
+      console.log("📤 Envoi des données à Supabase:", transactionData);
 
       try {
-        // Tentative d'envoi vers Supabase
+        // 1. Envoyer à Supabase
         if(supabaseClient) {
-            const { data, error } = await supabaseClient.from('transactions').insert([formData]).select().single();
-            if (error) throw error;
+            const { data, error } = await supabaseClient.from('transactions').insert([transactionData]).select().single();
+            
+            if (error) {
+                console.error("❌ Erreur Supabase:", error);
+                throw error;
+            }
+            
+            console.log("✅ Transaction enregistrée:", data);
+            
+            // 2. Stocker en sessionStorage pour l'étape 2
             sessionStorage.setItem('transaction_achat', JSON.stringify(data));
-            window.location.href = '/achat-step2.html';
+            sessionStorage.setItem('transaction_id', data.id);
+            
+            console.log("✅ Données stockées en session");
+            
+            // 3. Redirection vers l'étape 2
+            setTimeout(() => {
+                window.location.href = '/achat-step2.html';
+            }, 500);
+            
         } else {
+            console.warn("⚠️ Mode test : Supabase non disponible");
             alert("Mode test : Données simulées. La connexion Supabase est inactive.");
-            btn.disabled = false;
-            txt.classList.remove('opacity-0');
-            loader.classList.add('hidden');
+            
+            // Stocker les données simulées
+            transactionData.id = 'test-' + Date.now();
+            sessionStorage.setItem('transaction_achat', JSON.stringify(transactionData));
+            
+            setTimeout(() => {
+                window.location.href = '/achat-step2.html';
+            }, 500);
         }
       } catch (err) {
-        console.error(err);
+        console.error("❌ Erreur lors de l'envoi:", err);
         btn.disabled = false;
         txt.classList.remove('opacity-0');
         loader.classList.add('hidden');
-        alert("Erreur lors de l'envoi : " + err.message);
+        
+        const errorMsg = err.message || "Erreur inconnue";
+        document.getElementById('global-error').classList.remove('hidden');
+        document.getElementById('error-msg').textContent = "Échec de la sauvegarde : " + errorMsg;
       }
     });
 
