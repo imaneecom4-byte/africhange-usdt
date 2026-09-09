@@ -6,106 +6,115 @@
 <title>Acheter des USDT — Étape 2 · Paiement</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/css/style.css" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="min-h-screen flex items-center justify-center p-5">
+<body class="min-h-screen flex items-center justify-center p-5 bg-slate-900 text-white">
 
   <div class="w-full max-w-md entree-ecran">
     <div class="flex items-center justify-between mb-4">
       <a href="/achat-step1.html" class="text-sm text-slate-400 hover:text-slate-200">&larr; Retour</a>
       <span class="text-xs text-slate-500">Étape 2 sur 5</span>
     </div>
-
     <div class="etapes mb-6" id="barre-etapes"></div>
 
     <div class="card glow-achat p-7">
       <h1 class="font-display text-2xl font-semibold mb-1">Envoyez votre paiement</h1>
       <p class="text-sm text-slate-400 mb-6">Utilisez exactement les informations ci-dessous.</p>
 
-      <div class="rounded-2xl p-5 mb-5" style="background:var(--surface-alt); border:1px solid var(--border)">
-        <div class="flex justify-between text-sm mb-3">
+      <div class="rounded-2xl p-5 mb-5 bg-slate-800/50 border border-slate-700 space-y-3">
+        <div class="flex justify-between text-sm">
           <span class="text-slate-400">Opérateur</span>
-          <span id="op-nom" class="font-medium"></span>
+          <span id="op-nom" class="font-medium text-white">Chargement...</span>
         </div>
-        <div class="flex justify-between text-sm mb-3">
+        <div class="flex justify-between text-sm">
           <span class="text-slate-400">Numéro à créditer</span>
-          <!-- NUMÉRO PAR DÉFAUT POUR ÉVITER LE BLOCAGE -->
-          <span id="op-numero" class="font-medium font-display text-white">+226 70 00 00 00</span>
+          <!-- C'est ici que le vrai numéro s'affichera -->
+          <span id="op-numero" class="font-medium font-display text-emerald-400">Recherche...</span>
         </div>
-        <div class="flex justify-between text-sm mb-3">
+        <div class="flex justify-between text-sm">
           <span class="text-slate-400">Montant à envoyer</span>
-          <span id="montant-fcfa" class="font-medium font-display"></span>
+          <span id="montant-fcfa" class="font-medium font-display text-white"></span>
         </div>
         <div class="flex justify-between text-sm">
           <span class="text-slate-400">Vous recevrez</span>
-          <span id="montant-usdt" class="font-medium font-display" style="color:#26a17b"></span>
+          <span id="montant-usdt" class="font-medium font-display text-emerald-400"></span>
         </div>
       </div>
 
       <ol class="text-sm text-slate-400 space-y-2 list-decimal list-inside mb-6">
         <li>Ouvrez votre application Mobile Money.</li>
         <li>Envoyez le montant exact indiqué ci-dessus vers le numéro affiché.</li>
-        <li>Conservez la confirmation de la transaction, elle vous sera demandée à l'étape suivante.</li>
+        <li>Conservez la confirmation de la transaction.</li>
       </ol>
 
-      <p id="erreur" class="text-sm text-rose-400 hidden mb-3"></p>
-      <button id="btn-continuer" class="btn btn-primary w-full">J'ai envoyé l'argent</button>
+      <p id="erreur" class="text-sm text-rose-400 hidden mb-3 text-center"></p>
+      <button id="btn-continuer" class="btn btn-primary w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-bold shadow-lg">J'ai envoyé l'argent</button>
     </div>
   </div>
 
   <script>
-    // Fonction utilitaire pour les étapes
-    function rendreEtapes(container, currentStep) {
-        if(!container) return;
-        container.innerHTML = '';
-        for(let i=1; i<=5; i++) {
-            const point = document.createElement('div');
-            point.className = `etape-point ${i < currentStep ? 'faite' : ''} ${i === currentStep ? 'active' : ''}`;
-            container.appendChild(point);
-        }
-    }
+    const SB_URL = 'https://qlsetlqyejwrhztbesto.supabase.co';
+    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4';
+    const sbClient = window.supabase.createClient(SB_URL, SB_KEY);
 
-    // Initialisation - VERSION SIMPLIFIÉE SANS SUPABASE
-    document.addEventListener('DOMContentLoaded', () => {
-        rendreEtapes(document.getElementById('barre-etapes'), 2);
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Rendu étapes
+        const barre = document.getElementById('barre-etapes');
+        if(barre) {
+            barre.innerHTML = '';
+            for(let i=1; i<=5; i++) {
+                const p = document.createElement('div');
+                p.className = `etape-point ${i < 2 ? 'faite' : ''} ${i === 2 ? 'active' : ''}`;
+                barre.appendChild(p);
+            }
+        }
 
         const dataJSON = sessionStorage.getItem('transaction_achat');
         const errorEl = document.getElementById('erreur');
 
         if (!dataJSON) {
-            errorEl.textContent = "Aucune transaction trouvée. Veuillez recommencer.";
+            errorEl.textContent = "Session expirée.";
             errorEl.classList.remove('hidden');
-            setTimeout(() => window.location.href = '/achat-step1.html', 3000);
+            setTimeout(() => window.location.href = '/achat-step1.html', 2000);
             return;
         }
 
         try {
             const p = JSON.parse(dataJSON);
             
-            // Affichage des données de base
-            document.getElementById('op-nom').textContent = p.operateur || 'Inconnu';
+            // Affichage infos de base
+            document.getElementById('op-nom').textContent = p.operateur;
             document.getElementById('montant-usdt').textContent = `${p.montant_usdt} USDT`;
-            
-            let fcfaAmount = p.montant_fcfa;
-            if (!fcfaAmount && p.taux_applique) {
-                fcfaAmount = p.montant_usdt * p.taux_applique;
-            }
-            document.getElementById('montant-fcfa').textContent = fcfaAmount 
-                ? `${fcfaAmount.toLocaleString('fr-FR')} FCFA`
-                : 'Calcul en cours…';
+            document.getElementById('montant-fcfa').textContent = `${p.montant_fcfa} FCFA`;
 
-            // Gestion du bouton "J'ai envoyé l'argent"
-            document.getElementById('btn-continuer').addEventListener('click', async () => {
-                const bouton = document.getElementById('btn-continuer');
-                bouton.disabled = true;
-                bouton.textContent = 'Validation...';
-                
-                alert("Paiement enregistré ! Un agent va vérifier.");
+            // --- RECHERCHE DU VRAI NUMÉRO DANS SUPABASE ---
+            console.log(`Recherche agent: ${p.pays} - ${p.operateur}`);
+            
+            const { data: agent, error } = await sbClient
+                .from('agents')
+                .select('numero')
+                .eq('pays', p.pays)
+                .eq('operateur', p.operateur)
+                .single();
+
+            if (error || !agent) {
+                console.warn("Agent non trouvé, utilisation défaut");
+                document.getElementById('op-numero').textContent = "+226 00 00 00 00";
+                document.getElementById('op-numero').classList.add('text-red-400');
+            } else {
+                // SUCCÈS : On affiche le vrai numéro
+                document.getElementById('op-numero').textContent = agent.numero;
+                console.log("Numéro trouvé:", agent.numero);
+            }
+
+            // Bouton suivant
+            document.getElementById('btn-continuer').addEventListener('click', () => {
                 window.location.href = '/achat-step3.html';
             });
 
         } catch (e) {
             console.error(e);
-            errorEl.textContent = "Erreur de lecture des données.";
+            errorEl.textContent = "Erreur de chargement.";
             errorEl.classList.remove('hidden');
         }
     });
