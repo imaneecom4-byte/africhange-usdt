@@ -10,252 +10,514 @@
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
-  body { font-family: 'Outfit', sans-serif; -webkit-tap-highlight-color: transparent; background-color: #020617; color: #e2e8f0; }
-  .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
-  .glass-card { background: linear-gradient(145deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%); border: 1px solid rgba(255, 255, 255, 0.05); }
+  body { font-family: 'Outfit', sans-serif; -webkit-tap-highlight-color: transparent; }
+  .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+  .glass-card { background: linear-gradient(145deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%); border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); }
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: #0f172a; }
   ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+  .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px; }
   
-  /* Toast */
+  /* Toast fallback */
   #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
-  .toast { background: rgba(15, 23, 42, 0.95); color: white; padding: 1rem; border-radius: 0.75rem; box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 0.75rem; min-width: 250px; animation: slideIn 0.3s ease-out forwards; border-left: 4px solid #10b981; pointer-events: auto; }
+  .toast { background: rgba(15, 23, 42, 0.95); color: white; padding: 1rem 1.5rem; border-radius: 0.75rem; box-shadow: 0 10px 25px rgba(0,0,0,0.5); font-size: 0.875rem; display: flex; align-items: center; gap: 0.75rem; min-width: 280px; max-width: 90vw; animation: slideIn 0.3s ease-out forwards; border-left: 4px solid #10b981; pointer-events: auto; }
+  .toast.warning { border-left-color: #f59e0b; }
   .toast.error { border-left-color: #ef4444; }
   @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  @keyframes fadeOut { to { transform: translateX(100%); opacity: 0; } }
   
-  /* Mobile Optimizations */
   @media (max-width: 768px) {
     .lg\\:w-2\\/3, .lg\\:w-1\\/3 { width: 100% !important; }
     .grid-cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
-    table { display: block; overflow-x: auto; white-space: nowrap; }
   }
 </style>
 </head>
-<body class="min-h-screen selection:bg-emerald-500 selection:text-white">
+<body class="bg-slate-950 text-slate-200 min-h-screen selection:bg-emerald-500 selection:text-white">
 
   <div id="toast-container"></div>
 
   <!-- Header -->
-  <nav class="sticky top-0 z-50 glass-panel border-b border-white/10 px-4 py-3 flex justify-between items-center">
-    <div class="flex items-center gap-2">
-      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-slate-900 font-bold">₮</div>
+  <nav class="fixed top-0 w-full z-50 glass-panel border-b-0 border-white/10 px-6 py-4 flex justify-between items-center">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20 text-slate-900 font-bold text-xl">₮</div>
       <div>
-        <h1 class="font-bold text-base text-white">AfriChange <span class="text-emerald-400">Admin</span></h1>
-        <p class="text-[10px] text-slate-400">Gestion Centrale</p>
+        <h1 class="font-bold text-lg tracking-tight text-white">AfriChange <span class="text-emerald-400">Admin</span></h1>
+        <p class="text-xs text-slate-400">Gestion Centrale</p>
       </div>
     </div>
-    <button onclick="location.reload()" class="p-2 rounded-full hover:bg-white/10"><i class="ph ph-arrows-clockwise text-xl"></i></button>
+    <div class="flex items-center gap-4">
+      <button onclick="afficherNotifications()" class="relative p-2 rounded-full hover:bg-white/5 transition group">
+        <i class="ph ph-bell text-xl text-slate-300 group-hover:text-emerald-400 transition"></i>
+        <span id="badge-notif" class="hidden absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-slate-900 animate-pulse"></span>
+      </button>
+      <button onclick="deconnexionAdmin()" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-red-500/10 hover:text-red-400 border border-slate-700 hover:border-red-500/30 transition text-sm font-medium">
+        <i class="ph ph-sign-out"></i> Déconnexion
+      </button>
+    </div>
   </nav>
 
-  <main class="p-4 max-w-7xl mx-auto space-y-6 pb-20">
+  <main class="pt-24 pb-10 px-6 max-w-7xl mx-auto space-y-8">
 
-    <!-- STATS -->
-    <section class="grid grid-cols-2 gap-4">
-      <div class="glass-card p-4 rounded-xl">
-        <p class="text-slate-400 text-xs">Bénéfice</p>
-        <h3 id="stat-benef" class="text-xl font-bold text-white mt-1">— FCFA</h3>
+    <!-- STATS CARDS (Design Original) -->
+    <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in">
+      <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
+        <div class="absolute right-0 top-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-emerald-500/20 transition duration-500"></div>
+        <div class="flex justify-between items-start mb-4">
+          <div>
+            <p class="text-slate-400 text-sm font-medium">Bénéfice Total</p>
+            <h3 id="stat-benef" class="text-3xl font-bold text-white mt-1">— FCFA</h3>
+          </div>
+          <div class="p-3 bg-emerald-500/10 rounded-xl text-emerald-400"><i class="ph ph-currency-dollar text-2xl"></i></div>
+        </div>
+        <div class="text-xs text-emerald-400 flex items-center gap-1"><i class="ph ph-trend-up"></i> En temps réel</div>
       </div>
-      <div class="glass-card p-4 rounded-xl">
-        <p class="text-slate-400 text-xs">Validées</p>
-        <h3 id="stat-validees" class="text-xl font-bold text-white mt-1">—</h3>
+
+      <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
+        <div class="absolute right-0 top-0 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-blue-500/20 transition duration-500"></div>
+        <div class="flex justify-between items-start mb-4">
+          <div>
+            <p class="text-slate-400 text-sm font-medium">Transactions Validées</p>
+            <h3 id="stat-validees" class="text-3xl font-bold text-white mt-1">—</h3>
+          </div>
+          <div class="p-3 bg-blue-500/10 rounded-xl text-blue-400"><i class="ph ph-check-circle text-2xl"></i></div>
+        </div>
+        <div class="text-xs text-slate-500">Total historique</div>
+      </div>
+
+      <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
+        <div class="absolute right-0 top-0 w-24 h-24 bg-cyan-500/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-cyan-500/20 transition duration-500"></div>
+        <div class="flex justify-between items-start mb-4">
+          <div>
+            <p class="text-slate-400 text-sm font-medium">Volume Acheté</p>
+            <h3 id="stat-achat" class="text-3xl font-bold text-white mt-1">— USDT</h3>
+          </div>
+          <div class="p-3 bg-cyan-500/10 rounded-xl text-cyan-400"><i class="ph ph-arrow-down-left text-2xl"></i></div>
+        </div>
+        <div class="text-xs text-slate-500">Entrées clients</div>
+      </div>
+
+      <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
+        <div class="absolute right-0 top-0 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-amber-500/20 transition duration-500"></div>
+        <div class="flex justify-between items-start mb-4">
+          <div>
+            <p class="text-slate-400 text-sm font-medium">Volume Vendu</p>
+            <h3 id="stat-vente" class="text-3xl font-bold text-white mt-1">— USDT</h3>
+          </div>
+          <div class="p-3 bg-amber-500/10 rounded-xl text-amber-400"><i class="ph ph-arrow-up-right text-2xl"></i></div>
+        </div>
+        <div class="text-xs text-slate-500">Sorties vers Mobile Money</div>
       </div>
     </section>
 
-    <!-- TRANSACTIONS -->
-    <div class="space-y-4">
-      <div class="flex justify-between items-center">
-        <h2 class="text-lg font-bold text-white">Transactions</h2>
-        <select id="filtre-statut" class="bg-slate-800 border border-slate-700 text-xs rounded-lg px-2 py-1">
-          <option value="">Tous</option>
-          <option value="en_attente">En attente</option>
-          <option value="valide">Validées</option>
-          <option value="rejete">Rejetées</option>
-        </select>
-      </div>
-
-      <div class="glass-panel rounded-xl overflow-hidden">
-        <table class="w-full text-left text-xs">
-          <thead class="bg-slate-900/50 text-slate-400 uppercase">
-            <tr>
-              <th class="p-3">Client</th>
-              <th class="p-3">Type</th>
-              <th class="p-3">Montant</th>
-              <th class="p-3">Statut</th>
-              <th class="p-3 text-right">Act.</th>
-            </tr>
-          </thead>
-          <tbody id="corps-tableau" class="divide-y divide-slate-800">
-            <tr><td colspan="5" class="p-8 text-center text-slate-500">Chargement...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- CONFIG & AGENTS -->
-    <div class="grid grid-cols-1 gap-6">
+    <!-- MAIN CONTENT -->
+    <div class="flex flex-col lg:flex-row gap-8">
       
-      <!-- Config -->
-      <div class="glass-card p-4 rounded-xl">
-        <h3 class="font-bold text-white mb-3 text-sm">Configuration</h3>
-        <form id="form-config" class="space-y-3">
-          <div class="grid grid-cols-2 gap-2">
-            <input type="number" id="cfg-taux-achat" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white" placeholder="Taux Achat">
-            <input type="number" id="cfg-taux-vente" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white" placeholder="Taux Vente">
+      <!-- LEFT: TRANSACTIONS -->
+      <div class="lg:w-2/3 space-y-6 animate-fade-in" style="animation-delay: 0.1s;">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-bold text-white flex items-center gap-2"><i class="ph ph-list-dashes text-emerald-400"></i> Transactions Récentes</h2>
+          <div class="flex gap-2">
+            <select id="filtre-statut" class="bg-slate-900 border border-slate-700 text-slate-300 text-sm rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 outline-none">
+              <option value="">Tous les statuts</option>
+              <option value="en_attente">En attente</option>
+              <option value="valide">Validées 🟢</option>
+              <option value="rejete">Rejetées ⚫</option>
+            </select>
+            <button onclick="rafraichirTransactions()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg border border-slate-700 transition"><i class="ph ph-arrows-clockwise"></i></button>
           </div>
-          <input type="text" id="cfg-adresse" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white font-mono" placeholder="Adresse USDT">
-          <button type="submit" class="w-full bg-emerald-600 text-white py-2 rounded text-xs font-bold">Sauvegarder</button>
-        </form>
+        </div>
+
+        <div class="glass-panel rounded-2xl overflow-hidden shadow-xl">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse min-w-[600px]">
+              <thead>
+                <tr class="bg-slate-900/50 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-700">
+                  <th class="p-4 font-semibold">Client</th>
+                  <th class="p-4 font-semibold">Type</th>
+                  <th class="p-4 font-semibold">Montant</th>
+                  <th class="p-4 font-semibold">Statut</th>
+                  <th class="p-4 font-semibold text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="corps-tableau" class="divide-y divide-slate-800 text-sm">
+                <tr><td colspan="5" class="p-8 text-center text-slate-500">Chargement des données...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
-      <!-- Agents -->
-      <div class="glass-card p-4 rounded-xl">
-        <div class="flex justify-between items-center mb-3">
-          <h3 class="font-bold text-white text-sm">Agents Mobile Money</h3>
-          <button onclick="alert('Fonctionnalité à venir')" class="text-xs bg-slate-700 px-2 py-1 rounded">+ Ajouter</button>
+      <!-- RIGHT: CONFIG & AGENTS -->
+      <div class="lg:w-1/3 space-y-6 animate-fade-in" style="animation-delay: 0.2s;">
+        
+        <!-- Config -->
+        <div class="glass-card p-6 rounded-2xl">
+          <h3 class="font-bold text-white mb-4 flex items-center gap-2"><i class="ph ph-sliders text-emerald-400"></i> Configuration</h3>
+          <form id="form-config" class="space-y-4">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs text-slate-400 block mb-1">Taux Achat</label>
+                <input type="number" id="cfg-taux-achat" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-emerald-500 outline-none transition" placeholder="750">
+              </div>
+              <div>
+                <label class="text-xs text-slate-400 block mb-1">Taux Vente</label>
+                <input type="number" id="cfg-taux-vente" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-emerald-500 outline-none transition" placeholder="730">
+              </div>
+            </div>
+            <div>
+              <label class="text-xs text-slate-400 block mb-1">Adresse USDT</label>
+              <input type="text" id="cfg-adresse" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-slate-300 focus:border-emerald-500 outline-none transition" placeholder="0x...">
+            </div>
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2 rounded-lg shadow-lg shadow-emerald-900/20 transition transform active:scale-95">Sauvegarder</button>
+          </form>
         </div>
-        <div id="liste-agents-admin" class="space-y-2">
-          <div class="text-center text-slate-500 text-xs py-4">Chargement...</div>
+
+        <!-- Agents -->
+        <div class="glass-card p-6 rounded-2xl flex flex-col h-[500px]">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-white flex items-center gap-2"><i class="ph ph-users text-amber-400"></i> Agents Mobile Money</h3>
+            <button onclick="ajouterAgentPrompt()" class="text-xs bg-slate-800 hover:bg-emerald-600 hover:text-white text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1">
+              <i class="ph ph-plus"></i> Ajouter
+            </button>
+          </div>
+          <div id="liste-agents-admin" class="flex-1 overflow-y-auto space-y-3 pr-2">
+            <div class="text-center text-slate-500 mt-10">Chargement...</div>
+          </div>
         </div>
       </div>
-
     </div>
   </main>
 
-  <!-- MODAL IMAGE -->
-  <div id="modale-preuve" class="hidden fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4" onclick="this.classList.add('hidden')">
-    <img id="modale-image" src="" class="max-w-full max-h-full object-contain rounded-lg">
+  <!-- MODAL PREUVE -->
+  <div id="modale-preuve" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm z-[60] flex items-center justify-center p-4" onclick="fermerModale()">
+    <div class="relative max-w-3xl w-full">
+      <button class="absolute top-4 right-4 text-white hover:text-red-400 text-3xl font-light">&times;</button>
+      <img id="modale-image" src="" alt="Preuve" class="w-full h-auto rounded-xl shadow-2xl border border-white/10" />
+    </div>
   </div>
 
+  <!-- SCRIPT LOGIQUE COMPLET -->
   <script>
-    // --- CONFIGURATION DIRECTE (PAS DE FICHIER EXTERNE) ---
     const SB_URL = 'https://qlsetlqyejwrhztbesto.supabase.co';
     const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4';
-    
-    // CORRECTION ICI : On utilise 'sbClient' pour éviter le conflit "already declared"
     const sbClient = window.supabase.createClient(SB_URL, SB_KEY);
 
-    function showToast(msg, type='info') {
-      const t = document.createElement('div');
-      t.className = `toast ${type}`;
-      t.innerHTML = `<span>${msg}</span>`;
-      document.getElementById('toast-container').appendChild(t);
-      setTimeout(() => t.remove(), 3000);
+    // --- SYSTÈME DE NOTIFICATIONS CHROME RÉELLES ---
+    function demanderPermissionNotif() {
+      if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission();
+      }
     }
 
-    // --- CHARGEMENT DES DONNÉES ---
-    async function init() {
+    function envoyerNotification(titre, message) {
+      // Essaie la vraie notification Chrome
+      if ("Notification" in window && Notification.permission === "granted") {
+        try {
+          const notif = new Notification(titre, {
+            body: message,
+            icon: "/icon.png",
+            badge: "/icon.png",
+            tag: "africhange-new-tx",
+            requireInteraction: true
+          });
+          notif.onclick = function() {
+            window.focus();
+            document.getElementById('filtre-statut').value = 'en_attente';
+            rafraichirTransactions();
+            notif.close();
+          };
+        } catch (e) {
+          // Si ça échoue (mobile), on utilise le toast
+          showToast(message, 'warning');
+        }
+      } else {
+        // Fallback toast si permission refusée ou mobile
+        showToast(message, 'warning');
+      }
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type === 'warning' ? 'warning' : type === 'error' ? 'error' : ''}`;
+      let icon = '';
+      if (type === 'success') icon = '✅';
+      if (type === 'error') icon = '❌';
+      if (type === 'warning') icon = '⚠️';
+      toast.innerHTML = `<span class="text-xl">${icon}</span><span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.animation = 'fadeOut 0.3s ease-out forwards';
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    // --- AUTH ---
+    async function verifierAuth() {
+      if (typeof verifierAuthAdmin === 'function') await verifierAuthAdmin();
+      else if (!sessionStorage.getItem('africhange_admin_session')) {
+        sessionStorage.setItem('africhange_admin_session', 'true');
+      }
+    }
+    verifierAuth();
+    demanderPermissionNotif();
+
+    // --- STATS ---
+    async function rafraichirStats() {
       try {
-        // Charger Config
-        const { data: cfg } = await sbClient.from('config').select('*').single();
-        if(cfg) {
-          document.getElementById('cfg-taux-achat').value = cfg.taux_achat_client;
-          document.getElementById('cfg-taux-vente').value = cfg.taux_vente_client;
-          document.getElementById('cfg-adresse').value = cfg.adresse_usdt_reception;
+        const { data, error } = await sbClient.from('transactions').select('type_transaction, montant_usdt, benefice_estime').eq('statut', 'valide');
+        if (error) throw error;
+        const nb = data.length;
+        const benef = data.reduce((sum, t) => sum + (parseFloat(t.benefice_estime) || 0), 0);
+        const achat = data.filter(t => t.type_transaction === 'achat').reduce((sum, t) => sum + (parseFloat(t.montant_usdt) || 0), 0);
+        const vente = data.filter(t => t.type_transaction === 'vente').reduce((sum, t) => sum + (parseFloat(t.montant_usdt) || 0), 0);
+        
+        document.getElementById('stat-benef').textContent = benef.toLocaleString('fr-FR') + ' FCFA';
+        document.getElementById('stat-validees').textContent = nb;
+        document.getElementById('stat-achat').textContent = achat.toFixed(2) + ' USDT';
+        document.getElementById('stat-vente').textContent = vente.toFixed(2) + ' USDT';
+      } catch (e) { console.error(e); }
+    }
+
+    // --- TRANSACTIONS ---
+    async function rafraichirTransactions() {
+      const corps = document.getElementById('corps-tableau');
+      corps.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-500">Actualisation...</td></tr>';
+      
+      try {
+        const statut = document.getElementById('filtre-statut').value;
+        let query = sbClient.from('transactions').select('*').order('created_at', { ascending: false }).limit(50);
+        if (statut) query = query.eq('statut', statut);
+        
+        const { data, error } = await query;
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+          corps.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-slate-500">Aucune transaction trouvée.</td></tr>';
+          return;
         }
 
-        // Charger Agents
-        const { data: agents } = await sbClient.from('agents').select('*');
-        const agentContainer = document.getElementById('liste-agents-admin');
-        if(agents && agents.length > 0) {
-          agentContainer.innerHTML = agents.map(a => `
-            <div class="bg-slate-800/50 p-2 rounded flex justify-between items-center text-xs">
-              <div>
-                <div class="font-bold text-emerald-400">${a.pays}</div>
-                <div class="text-slate-400">${a.operateur}</div>
-              </div>
-              <div class="font-mono text-white">${a.numero}</div>
-            </div>
-          `).join('');
-        } else {
-          agentContainer.innerHTML = '<div class="text-center text-slate-500 text-xs">Aucun agent</div>';
-        }
+        verifierNouvellesTransactions(data);
 
-        // Charger Transactions
-        rafraichirTransactions();
+        corps.innerHTML = data.map(t => {
+          const nomClient = `${t.nom || ''} ${t.prenom || ''}`.trim() || 'Anonyme';
+          const telephone = t.numero_telephone || '-';
+          const typeTx = t.type_transaction || 'inconnu';
+          const montantUSDT = t.montant_usdt || 0;
+          const montantFCFA = t.montant_fcfa || 0;
+          const statutTx = t.statut || 'en_attente';
+          const preuveUrl = t.preuve_url || null;
+          
+          const isAchat = typeTx === 'achat';
+          const typeBadge = isAchat 
+            ? '<span class="px-2 py-1 rounded bg-cyan-500/10 text-cyan-400 text-xs font-bold border border-cyan-500/20">ACHAT</span>' 
+            : '<span class="px-2 py-1 rounded bg-amber-500/10 text-amber-400 text-xs font-bold border border-amber-500/20">VENTE</span>';
+          
+          let statusClass = 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
+          let statusLabel = 'En attente';
+          if (statutTx === 'valide' || statutTx === 'validée') { statusClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'; statusLabel = 'Validée'; }
+          else if (statutTx === 'rejete' || statutTx === 'rejetée') { statusClass = 'bg-red-500/10 text-red-400 border-red-500/20'; statusLabel = 'Rejetée'; }
 
+          let actionsHtml = '<span class="text-xs text-slate-600 italic">Terminé</span>';
+          if (statutTx === 'en_attente') {
+              let btnPreuve = preuveUrl ? `<button onclick="ouvrirModale('${preuveUrl}')" class="p-2 rounded-lg bg-slate-700 hover:bg-blue-500 text-white transition" title="Voir Preuve"><i class="ph ph-eye"></i></button>` : '';
+              actionsHtml = `<div class="flex justify-end gap-2">
+                    <button onclick="validerTransaction('${t.id}')" class="p-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition shadow-lg shadow-emerald-900/20" title="Valider"><i class="ph ph-check"></i></button>
+                    <button onclick="rejeterTransaction('${t.id}')" class="p-2 rounded-lg bg-slate-700 hover:bg-red-500 text-white transition" title="Rejeter"><i class="ph ph-x"></i></button>
+                    ${btnPreuve}
+                  </div>`;
+          } else if (preuveUrl) {
+              actionsHtml = `<button onclick="ouvrirModale('${preuveUrl}')" class="p-2 rounded-lg bg-slate-700 hover:bg-blue-500 text-white transition" title="Voir Preuve"><i class="ph ph-eye"></i></button>`;
+          }
+
+          return `
+            <tr class="hover:bg-white/5 transition group">
+              <td class="p-4">
+                <div class="font-bold text-white">${nomClient}</div>
+                <div class="text-xs text-slate-400">${telephone}</div>
+              </td>
+              <td class="p-4">${typeBadge}</td>
+              <td class="p-4">
+                <div class="font-bold text-slate-200">${montantUSDT} USDT</div>
+                <div class="text-xs text-slate-500">${formaterFCFA(montantFCFA)}</div>
+              </td>
+              <td class="p-4"><span class="status-badge ${statusClass} border">${statusLabel}</span></td>
+              <td class="p-4 text-right">${actionsHtml}</td>
+            </tr>
+          `;
+        }).join('');
       } catch (e) {
         console.error(e);
-        showToast("Erreur de connexion", "error");
+        corps.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-red-400">Erreur: ${e.message}</td></tr>`;
       }
     }
 
-    async function rafraichirTransactions() {
-      const tbody = document.getElementById('corps-tableau');
-      const statut = document.getElementById('filtre-statut').value;
+    function formaterFCFA(montant) {
+        if (!montant && montant !== 0) return '0 FCFA';
+        return parseFloat(montant).toLocaleString('fr-FR') + ' FCFA';
+    }
+
+    // --- DÉTECTION NOUVELLES TRANSACTIONS + NOTIFICATION CHROME ---
+    let dernierNbAttente = 0;
+    let premierChargement = true;
+
+    function verifierNouvellesTransactions(data) {
+      const nb = data.filter(t => t.statut === 'en_attente').length;
       
-      let query = sbClient.from('transactions').select('*').order('created_at', { ascending: false }).limit(20);
-      if(statut) query = query.eq('statut', statut);
-
-      const { data, error } = await query;
-
-      if(error) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-red-400 text-center">Erreur: ${error.message}</td></tr>`;
-        return;
+      // Ne pas notifier au premier chargement (évite spam au démarrage)
+      if (!premierChargement && nb > 0 && nb > dernierNbAttente) {
+        const nouveaux = nb - dernierNbAttente;
+        envoyerNotification(
+          "🔔 AfriChange - Nouvelle Transaction !",
+          `${nouveaux} nouvelle(s) transaction(s) en attente de vérification.`
+        );
       }
-
-      if(!data || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-slate-500">Aucune transaction</td></tr>';
-        return;
-      }
-
-      // Stats
-      const valides = data.filter(t => t.statut === 'valide');
-      document.getElementById('stat-validees').textContent = valides.length;
       
-      tbody.innerHTML = data.map(t => {
-        const badgeColor = t.statut === 'valide' ? 'bg-emerald-500/20 text-emerald-400' : 
-                           t.statut === 'rejete' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400';
-        
-        return `
-          <tr class="border-b border-slate-800 hover:bg-white/5">
-            <td class="p-3">
-              <div class="font-bold text-white">${t.nom || 'Anonyme'}</div>
-              <div class="text-[10px] text-slate-500">${t.numero_telephone || ''}</div>
-            </td>
-            <td class="p-3 text-[10px] uppercase font-bold ${t.type_transaction === 'achat' ? 'text-cyan-400' : 'text-amber-400'}">${t.type_transaction}</td>
-            <td class="p-3 font-bold">${t.montant_usdt} <span class="text-[10px] text-slate-500">USDT</span></td>
-            <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] ${badgeColor}">${t.statut}</span></td>
-            <td class="p-3 text-right">
-              ${t.preuve_url ? `<button onclick="document.getElementById('modale-image').src='${t.preuve_url}'; document.getElementById('modale-preuve').classList.remove('hidden')" class="text-blue-400"><i class="ph ph-eye"></i></button>` : ''}
-              ${t.statut === 'en_attente' ? `
-                <button onclick="valider('${t.id}')" class="text-emerald-400 ml-2"><i class="ph ph-check"></i></button>
-                <button onclick="rejeter('${t.id}')" class="text-red-400 ml-1"><i class="ph ph-x"></i></button>
-              ` : ''}
-            </td>
-          </tr>
-        `;
-      }).join('');
+      if (premierChargement) premierChargement = false;
+      dernierNbAttente = nb;
+      
+      const badge = document.getElementById('badge-notif');
+      if (nb > 0) { badge.textContent = nb; badge.classList.remove('hidden'); } else { badge.classList.add('hidden'); }
     }
 
-    // --- ACTIONS ---
-    async function valider(id) {
-      if(!confirm("Valider ?")) return;
-      await sbClient.from('transactions').update({ statut: 'valide' }).eq('id', id);
-      showToast("Validée !");
-      rafraichirTransactions();
+    function afficherNotifications() { 
+      showToast(`Vous avez ${dernierNbAttente} transaction(s) en attente.`, 'info'); 
+      document.getElementById('filtre-statut').value = 'en_attente'; 
+      rafraichirTransactions(); 
     }
 
-    async function rejeter(id) {
-      if(!confirm("Rejeter ?")) return;
-      await sbClient.from('transactions').update({ statut: 'rejete' }).eq('id', id);
-      showToast("Rejetée", "error");
-      rafraichirTransactions();
+    // --- ACTIONS TRANSACTIONS ---
+    async function validerTransaction(id) { 
+      if(!confirm("Confirmer la validation de cette transaction ?")) return; 
+      try {
+        const { error } = await sbClient.from('transactions').update({ statut: 'valide' }).eq('id', id);
+        if(error) throw error;
+        showToast("Transaction validée avec succès !", "success");
+        rafraichirTransactions(); 
+        rafraichirStats(); 
+      } catch(e) { showToast("Erreur validation", "error"); }
     }
-
-    document.getElementById('filtre-statut').addEventListener('change', rafraichirTransactions);
     
-    document.getElementById('form-config').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      await sbClient.from('config').update({
-        taux_achat_client: parseFloat(document.getElementById('cfg-taux-achat').value),
-        taux_vente_client: parseFloat(document.getElementById('cfg-taux-vente').value),
-        adresse_usdt_reception: document.getElementById('cfg-adresse').value
-      }).eq('id', 1);
-      showToast("Config sauvegardée");
+    async function rejeterTransaction(id) { 
+      const m = prompt("Motif du rejet :"); 
+      if(m===null) return; 
+      try {
+        const { error } = await sbClient.from('transactions').update({ statut: 'rejete', motif_rejet: m }).eq('id', id);
+        if(error) throw error;
+        showToast("Transaction rejetée.", "error");
+        rafraichirTransactions(); 
+      } catch(e) { showToast("Erreur rejet", "error"); }
+    }
+    
+    function ouvrirModale(url) { document.getElementById('modale-image').src = url; document.getElementById('modale-preuve').classList.remove('hidden'); }
+    function fermerModale() { document.getElementById('modale-preuve').classList.add('hidden'); document.getElementById('modale-image').src = ""; }
+
+    // --- AGENTS (AVEC MODIFIER / SUPPRIMER) ---
+    async function chargerAgentsUI() {
+      try {
+        const { data, error } = await sbClient.from('agents').select('*').order('pays');
+        if (error) throw error;
+        const container = document.getElementById('liste-agents-admin');
+        if (!data || data.length === 0) { container.innerHTML = '<div class="text-center text-slate-500 text-sm py-4">Aucun agent configuré.</div>'; return; }
+        
+        container.innerHTML = data.map(a => `
+          <div class="bg-slate-950/50 border border-slate-800 p-3 rounded-xl flex flex-col gap-2 hover:border-emerald-500/30 transition group">
+            <div class="flex justify-between items-start">
+              <div>
+                <div class="text-xs font-bold text-emerald-400 uppercase tracking-wide">${a.pays}</div>
+                <div class="text-xs text-slate-400 font-medium">${a.operateur}</div>
+              </div>
+              <div class="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition">
+                <button onclick="modifierAgent('${a.id}', '${a.numero}')" class="text-slate-500 hover:text-blue-400 p-1" title="Modifier"><i class="ph ph-pencil"></i></button>
+                <button onclick="supprimerAgent('${a.id}')" class="text-slate-500 hover:text-red-400 p-1" title="Supprimer"><i class="ph ph-trash"></i></button>
+              </div>
+            </div>
+            <div class="flex gap-2 items-center">
+              <input type="text" value="${a.numero || ''}" class="flex-1 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white focus:border-emerald-500 outline-none" id="input-agent-${a.id}">
+              <button onclick="sauverAgent('${a.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-1 rounded font-medium transition">OK</button>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) { console.error(e); }
+    }
+
+    async function modifierAgent(id, ancienNumero) {
+      const nouveau = prompt("Nouveau numéro pour cet agent :", ancienNumero);
+      if(nouveau && nouveau.trim() && nouveau !== ancienNumero) {
+        try {
+          await sbClient.from('agents').update({ numero: nouveau.trim() }).eq('id', id);
+          showToast("Numéro modifié", "success");
+          chargerAgentsUI();
+        } catch(e) { showToast("Erreur modification", "error"); }
+      }
+    }
+
+    async function sauverAgent(id) { 
+      const input = document.getElementById(`input-agent-${id}`); 
+      const btn = input.nextElementSibling; 
+      const oldText = btn.textContent; 
+      btn.textContent = '...'; 
+      try { 
+        await sbClient.from('agents').update({ numero: input.value }).eq('id', id); 
+        btn.textContent = '✓'; 
+        showToast("Numéro mis à jour", "success"); 
+        setTimeout(() => btn.textContent = oldText, 1500); 
+      } catch (e) { alert("Erreur: " + e.message); btn.textContent = oldText; } 
+    }
+
+    async function supprimerAgent(id) { 
+      if(!confirm("Supprimer cet agent ?")) return; 
+      try { 
+        await sbClient.from('agents').delete().eq('id', id); 
+        chargerAgentsUI(); 
+        showToast("Agent supprimé", "error"); 
+      } catch(e) { alert("Erreur suppression"); } 
+    }
+
+    async function ajouterAgentPrompt() {
+      const pays = prompt("Pays (ex: Burkina Faso):");
+      if(!pays) return;
+      const op = prompt("Opérateur (ex: Orange Money):");
+      if(!op) return;
+      const num = prompt("Numéro (ex: +226 70 00 00 00):");
+      if(!num) return;
+      try {
+        await sbClient.from('agents').insert([{ pays, operateur: op, numero: num }]);
+        showToast("Agent ajouté !", "success");
+        chargerAgentsUI();
+      } catch(err) { alert("Erreur: " + err.message); }
+    }
+
+    // --- CONFIG FORM ---
+    document.getElementById('form-config').addEventListener('submit', async (e) => { 
+      e.preventDefault(); 
+      const btn = e.target.querySelector('button'); 
+      btn.textContent = 'Enregistrement...'; 
+      try { 
+        await sbClient.from('config').update({ 
+          taux_achat_client: parseFloat(document.getElementById('cfg-taux-achat').value), 
+          taux_vente_client: parseFloat(document.getElementById('cfg-taux-vente').value), 
+          adresse_usdt_reception: document.getElementById('cfg-adresse').value 
+        }).eq('id', 1); 
+        showToast("Configuration sauvegardée !", "success"); 
+      } catch(err) { showToast("Erreur sauvegarde", "error"); } 
+      btn.textContent = 'Sauvegarder'; 
     });
 
-    // Lancement
-    init();
+    function deconnexionAdmin() {
+      sessionStorage.removeItem('africhange_admin_session');
+      window.location.href = '/admin-login.html';
+    }
+
+    // --- INIT ---
+    rafraichirStats();
+    rafraichirTransactions();
+    chargerAgentsUI();
+    
+    // Auto-refresh toutes les 15 secondes pour détecter les nouvelles transactions rapidement
+    setInterval(() => { rafraichirTransactions(); rafraichirStats(); }, 15000);
   </script>
 </body>
 </html>
