@@ -173,7 +173,36 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   outline-offset: 2px;
 }
 
-/* --- CACHER LE BADGE NETLIFY --- */
-#nf-badge { 
-    display: none !important; 
+/* --- CACHER LE BADGE NETLIFY (MÉTHODES MULTIPLES) --- */
+/* Méthode 1 : Cibler toutes les classes possibles du badge */
+[class*="netlify"], 
+[id*="netlify"],
+.netlify-badge,
+#netlify-badge,
+[data-netlify],
+footer a[href*="netlify"],
+footer span[href*="netlify"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    width: 0 !important;
+    overflow: hidden !important;
+}
+
+/* Méthode 2 : Cibler spécifiquement le footer si le badge y est */
+footer {
+    position: relative;
+}
+
+footer::after {
+    content: "";
+    display: block;
+    height: 0;
+    visibility: hidden;
+}
+
+/* Méthode 3 : Forcer la suppression de tout élément contenant "netlify" */
+* {
+    contain-intrinsic-size: auto 0px;
 }
