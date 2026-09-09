@@ -6,7 +6,6 @@
 <title>Acheter des USDT — Étape 2 · Paiement</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/css/style.css" />
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="min-h-screen flex items-center justify-center p-5">
 
@@ -29,8 +28,8 @@
         </div>
         <div class="flex justify-between text-sm mb-3">
           <span class="text-slate-400">Numéro à créditer</span>
-          <!-- C'est ici que le vrai numéro s'affichera -->
-          <span id="op-numero" class="font-medium font-display text-white">Chargement...</span>
+          <!-- NUMÉRO PAR DÉFAUT POUR ÉVITER LE BLOCAGE -->
+          <span id="op-numero" class="font-medium font-display text-white">+226 70 00 00 00</span>
         </div>
         <div class="flex justify-between text-sm mb-3">
           <span class="text-slate-400">Montant à envoyer</span>
@@ -54,12 +53,6 @@
   </div>
 
   <script>
-    // Configuration Supabase
-    const SUPABASE_URL = 'https://qlsetlqyejwrhztbesto.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4';
-    
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
     // Fonction utilitaire pour les étapes
     function rendreEtapes(container, currentStep) {
         if(!container) return;
@@ -71,8 +64,8 @@
         }
     }
 
-    // Initialisation
-    document.addEventListener('DOMContentLoaded', async () => {
+    // Initialisation - VERSION SIMPLIFIÉE SANS SUPABASE
+    document.addEventListener('DOMContentLoaded', () => {
         rendreEtapes(document.getElementById('barre-etapes'), 2);
 
         const dataJSON = sessionStorage.getItem('transaction_achat');
@@ -88,7 +81,7 @@
         try {
             const p = JSON.parse(dataJSON);
             
-            // 1. Affichage des données de base (Nom, Montant, etc.)
+            // Affichage des données de base
             document.getElementById('op-nom').textContent = p.operateur || 'Inconnu';
             document.getElementById('montant-usdt').textContent = `${p.montant_usdt} USDT`;
             
@@ -99,29 +92,6 @@
             document.getElementById('montant-fcfa').textContent = fcfaAmount 
                 ? `${fcfaAmount.toLocaleString('fr-FR')} FCFA`
                 : 'Calcul en cours…';
-
-            // 2. SYNCHRONISATION : Récupérer le VRAI numéro depuis Supabase
-            console.log(`Recherche du numéro pour : ${p.pays} - ${p.operateur}`);
-
-            // On essaie de récupérer l'agent
-            const { data: agent, error } = await supabase
-                .from('agents')
-                .select('numero_telephone') // Assure-toi que ce nom de colonne est correct dans ta BDD
-                .eq('pays', p.pays)
-                .eq('operateur', p.operateur)
-                .eq('actif', true)
-                .single();
-
-            if (error || !agent) {
-                console.warn("Agent non trouvé ou erreur:", error);
-                // NUMÉRO PAR DÉFAUT POUR TESTER
-                document.getElementById('op-numero').textContent = "+226 70 00 00 00"; 
-                document.getElementById('op-numero').classList.add('text-yellow-400');
-            } else {
-                // SUCCÈS : On affiche le numéro venu de l'Admin
-                document.getElementById('op-numero').textContent = agent.numero_telephone;
-                console.log("✅ Numéro synchronisé :", agent.numero_telephone);
-            }
 
             // Gestion du bouton "J'ai envoyé l'argent"
             document.getElementById('btn-continuer').addEventListener('click', async () => {
