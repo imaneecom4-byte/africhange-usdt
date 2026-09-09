@@ -2,11 +2,22 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>Acheter des USDT — Étape 3 · Preuve</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/css/style.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  /* Style pour forcer le clic sur mobile */
+  .upload-zone {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .upload-zone:active {
+    transform: scale(0.98);
+    background-color: rgba(16, 185, 129, 0.1);
+  }
+</style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-5 bg-slate-900 text-white">
 
@@ -18,6 +29,8 @@
     <div class="etapes mb-6" id="barre-etapes"></div>
 
     <div class="card glow-achat p-7 relative">
+      
+      <!-- Erreur Session -->
       <div id="error-container" class="hidden absolute inset-0 bg-slate-900/95 z-10 flex flex-col items-center justify-center text-center p-6 rounded-2xl">
         <div class="text-red-500 text-4xl mb-4">⚠️</div>
         <h2 class="text-xl font-bold mb-2">Session Expirée</h2>
@@ -28,15 +41,19 @@
         <h1 class="font-display text-2xl font-semibold mb-1">Preuve de paiement</h1>
         <p class="text-sm text-slate-400 mb-6">Ajoutez la capture d'écran Mobile Money.</p>
 
-        <label for="fichier-preuve" id="zone-depot" class="block border-2 border-dashed border-slate-600 hover:border-emerald-500 rounded-2xl p-8 text-center cursor-pointer transition bg-slate-800/50">
+        <!-- Zone de dépôt corrigée pour mobile -->
+        <div id="zone-depot" class="upload-zone block border-2 border-dashed border-slate-600 rounded-2xl p-8 text-center bg-slate-800/50 mb-4">
           <div class="text-3xl mb-2">📎</div>
-          <p class="text-sm text-slate-300 font-medium" id="texte-depot">Cliquez pour choisir une image</p>
-          <input type="file" id="fichier-preuve" accept="image/*" class="hidden" />
-        </label>
-
-        <p id="erreur-msg" class="text-sm text-rose-400 hidden mt-4 text-center"></p>
+          <p class="text-sm text-slate-300 font-medium" id="texte-depot">Cliquez ici pour choisir une image</p>
+          <p class="text-xs text-slate-500 mt-1">PNG, JPG — 8 Mo max</p>
+        </div>
         
-        <button id="btn-envoyer" class="btn btn-primary w-full mt-6 bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-bold shadow-lg transition disabled:opacity-50">
+        <!-- Input caché mais présent dans le DOM -->
+        <input type="file" id="fichier-preuve" accept="image/*" class="hidden" />
+
+        <p id="erreur-msg" class="text-sm text-rose-400 hidden mt-2 text-center"></p>
+        
+        <button id="btn-envoyer" class="btn btn-primary w-full mt-4 bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-bold shadow-lg transition disabled:opacity-50">
           Envoyer la preuve
         </button>
       </div>
@@ -58,19 +75,33 @@
 
         const transaction = JSON.parse(dataJSON);
         const input = document.getElementById('fichier-preuve');
+        const zone = document.getElementById('zone-depot');
+        const texte = document.getElementById('texte-depot');
         const btn = document.getElementById('btn-envoyer');
         const errorMsg = document.getElementById('erreur-msg');
 
+        // --- CORRECTION MOBILE : Forcer le clic via JS ---
+        zone.addEventListener('click', (e) => {
+            e.preventDefault(); // Empêche le comportement par défaut
+            input.click(); // Force l'ouverture du sélecteur de fichier
+        });
+
+        // Quand un fichier est choisi
         input.addEventListener('change', () => {
-            if (input.files[0]) {
-                document.getElementById('texte-depot').textContent = "Fichier : " + input.files[0].name;
-                document.getElementById('zone-depot').classList.add('border-emerald-500');
+            if (input.files && input.files[0]) {
+                const fileName = input.files[0].name;
+                texte.textContent = "✅ " + fileName;
+                texte.classList.add('text-emerald-400');
+                zone.classList.add('border-emerald-500', 'bg-emerald-500/10');
+                zone.classList.remove('border-slate-600');
+                errorMsg.classList.add('hidden');
             }
         });
 
+        // Envoi
         btn.addEventListener('click', async () => {
-            if (!input.files[0]) {
-                errorMsg.textContent = "Veuillez sélectionner une image.";
+            if (!input.files || !input.files[0]) {
+                errorMsg.textContent = "Veuillez sélectionner une image d'abord.";
                 errorMsg.classList.remove('hidden');
                 return;
             }
@@ -79,21 +110,21 @@
             btn.textContent = "Envoi en cours...";
 
             try {
-                // 1. Upload du fichier vers Supabase Storage
                 const file = input.files[0];
                 const fileName = `${transaction.id}-${Date.now()}.jpg`;
                 
+                // Upload vers Supabase Storage
                 const { data: uploadData, error: uploadError } = await supabase.storage
-                    .from('preuves') // Nom du bucket
+                    .from('preuves')
                     .upload(fileName, file);
 
                 if (uploadError) throw uploadError;
 
-                // 2. Récupérer l'URL publique
+                // Récupérer l'URL publique
                 const { data: urlData } = supabase.storage.from('preuves').getPublicUrl(fileName);
                 const publicUrl = urlData.publicUrl;
 
-                // 3. Mettre à jour la transaction dans la base de données
+                // Mettre à jour la transaction
                 const { error: updateError } = await supabase
                     .from('transactions')
                     .update({ preuve_url: publicUrl })
