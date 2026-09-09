@@ -41,9 +41,49 @@
   .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
   
   .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px; }
+
+  /* Toast Notification Styles */
+  #toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .toast {
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 300px;
+    animation: slideIn 0.3s ease-out forwards;
+    border-left: 4px solid #10b981; /* Default green */
+  }
+  .toast.warning { border-left-color: #f59e0b; }
+  .toast.error { border-left-color: #ef4444; }
+  
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes fadeOut {
+    to { transform: translateX(100%); opacity: 0; }
+  }
 </style>
 </head>
 <body class="bg-slate-950 text-slate-200 min-h-screen selection:bg-emerald-500 selection:text-white">
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
 
   <!-- Sidebar / Header Mobile -->
   <nav class="fixed top-0 w-full z-50 glass-panel border-b-0 border-white/10 px-6 py-4 flex justify-between items-center">
@@ -220,8 +260,8 @@
         <div>
           <label class="text-xs text-slate-400 block mb-1">Pays</label>
           <select id="new-agent-pays" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500">
-            <option value="Burkina Faso">🇫 Burkina Faso</option>
-            <option value="Côte d'Ivoire">🇨🇮 Côte d'Ivoire</option>
+            <option value="Burkina Faso">🇧🇫 Burkina Faso</option>
+            <option value="Côte d'Ivoire">🇮 Côte d'Ivoire</option>
             <option value="Bénin">🇯 Bénin</option>
             <option value="Togo">🇹🇬 Togo</option>
           </select>
@@ -258,6 +298,27 @@
     let supabaseDirect;
     if (typeof supabase !== 'undefined') {
       supabaseDirect = supabase.createClient(SB_URL, SB_KEY);
+    }
+
+    // --- TOAST NOTIFICATION SYSTEM (REMPLACE NEW NOTIFICATION) ---
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type === 'warning' ? 'warning' : type === 'error' ? 'error' : ''}`;
+      
+      let icon = '🔔';
+      if (type === 'success') icon = '✅';
+      if (type === 'error') icon = '';
+      if (type === 'warning') icon = '⚠️';
+
+      toast.innerHTML = `<span class="text-xl">${icon}</span><span>${message}</span>`;
+      container.appendChild(toast);
+
+      // Supprimer après 4 secondes
+      setTimeout(() => {
+        toast.style.animation = 'fadeOut 0.3s ease-out forwards';
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
     }
 
     // --- AUTH ---
@@ -345,15 +406,16 @@
       }
     }
 
-    // --- NOTIFICATIONS ---
+    // --- NOTIFICATIONS (MODIFIÉ POUR UTILISER TOAST) ---
     let dernierNbAttente = 0;
     function verifierNouvellesTransactions(data) {
       const nb = data.filter(t => t.statut === 'en_attente').length;
+      
+      // Si le nombre augmente, on affiche un Toast au lieu de new Notification()
       if (nb > 0 && nb > dernierNbAttente) {
-        if ("Notification" in window && Notification.permission === "granted") {
-          new Notification(`🔔 AfriChange: ${nb} transaction(s) en attente !`, { body: "Un client a envoyé une preuve.", icon: "/icon.png" });
-        }
+        showToast(`🔔 ${nb} nouvelle(s) transaction(s) en attente !`, 'warning');
       }
+      
       dernierNbAttente = nb;
       const badge = document.getElementById('badge-notif');
       if (nb > 0) {
@@ -363,12 +425,30 @@
         badge.classList.add('hidden');
       }
     }
-    function afficherNotifications() { alert(`Vous avez ${dernierNbAttente} transaction(s) en attente.`); document.getElementById('filtre-statut').value = 'en_attente'; rafraichirTransactions(); }
-    if ("Notification" in window && Notification.permission !== "granted") Notification.requestPermission();
+
+    function afficherNotifications() { 
+      showToast(`Vous avez ${dernierNbAttente} transaction(s) en attente.`, 'info'); 
+      document.getElementById('filtre-statut').value = 'en_attente'; 
+      rafraichirTransactions(); 
+    }
 
     // --- ACTIONS ---
-    async function validerTransaction(id) { if(!confirm("Valider cette transaction ?")) return; await changerStatutTransaction(id, 'valide'); rafraichirTransactions(); rafraichirStats(); }
-    async function rejeterTransaction(id) { const m = prompt("Motif du rejet :"); if(m===null) return; await changerStatutTransaction(id, 'rejete', m); rafraichirTransactions(); }
+    async function validerTransaction(id) { 
+      if(!confirm("Valider cette transaction ?")) return; 
+      await changerStatutTransaction(id, 'valide'); 
+      showToast("Transaction validée avec succès !", "success");
+      rafraichirTransactions(); 
+      rafraichirStats(); 
+    }
+    
+    async function rejeterTransaction(id) { 
+      const m = prompt("Motif du rejet :"); 
+      if(m===null) return; 
+      await changerStatutTransaction(id, 'rejete', m); 
+      showToast("Transaction rejetée.", "error");
+      rafraichirTransactions(); 
+    }
+    
     function ouvrirModale(url) { document.getElementById('modale-image').src = url; document.getElementById('modale-preuve').classList.remove('hidden'); }
     function fermerModale() { document.getElementById('modale-preuve').classList.add('hidden'); }
 
@@ -412,6 +492,7 @@
       try {
         await enregistrerAgent(id, { numero: input.value });
         btn.textContent = '✓';
+        showToast("Numéro agent mis à jour", "success");
         setTimeout(() => btn.textContent = oldText, 1500);
       } catch (e) { alert("Erreur: " + e.message); btn.textContent = oldText; }
     }
@@ -421,6 +502,7 @@
       try {
         await supprimerAgent(id); // Fonction depuis admin.js
         chargerAgentsUI();
+        showToast("Agent supprimé", "error");
       } catch(e) { alert("Erreur suppression"); }
     }
 
@@ -436,7 +518,7 @@
         await ajouterAgent({ pays, operateur: op, numero: num });
         fermerModalAgent();
         chargerAgentsUI();
-        alert("Agent ajouté !");
+        showToast("Agent ajouté avec succès !", "success");
       } catch(err) { alert("Erreur: " + err.message); }
     });
 
@@ -451,8 +533,11 @@
           taux_vente_client: parseFloat(document.getElementById('cfg-taux-vente').value),
           adresse_usdt_reception: document.getElementById('cfg-adresse').value
         });
-        alert("Configuration sauvegardée !");
-      } catch(err) { alert("Erreur: " + err.message); }
+        showToast("Configuration sauvegardée !", "success");
+      } catch(err) { 
+        showToast("Erreur lors de la sauvegarde", "error"); 
+        alert("Erreur: " + err.message); 
+      }
       btn.textContent = 'Sauvegarder';
     });
 
