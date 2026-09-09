@@ -6,7 +6,6 @@
 <title>Vendre des USDT — Étape 2 · Envoi des USDT</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/css/style.css" />
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   #qrcode-container {
@@ -38,18 +37,14 @@
       <h1 class="font-display text-2xl font-semibold mb-1">Envoyez vos USDT</h1>
       <p class="text-sm text-slate-400 mb-5">Scannez le QR code ou copiez l'adresse ci-dessous.</p>
 
-      <!-- Zone de chargement -->
-      <div id="loading-area" class="text-center py-4 hidden">
-        <p class="text-slate-300 animate-pulse">Génération du QR Code...</p>
-      </div>
-
-      <!-- Conteneur du QR Code (sera rempli par JS) -->
-      <div id="qrcode-container" class="hidden">
-        <!-- Le QR Code sera injecté ici -->
+      <!-- Conteneur du QR Code -->
+      <div id="qrcode-container">
+        <!-- Le QR Code sera généré ici -->
       </div>
 
       <div class="rounded-2xl p-4 mb-5 flex items-center justify-between gap-3" style="background:var(--surface-alt); border:1px solid var(--border)">
-        <span id="adresse-usdt" class="text-xs font-mono break-all text-slate-300">Chargement…</span>
+        <!-- ADRESSE PAR DÉFAUT POUR ÉVITER LE BLOCAGE -->
+        <span id="adresse-usdt" class="text-xs font-mono break-all text-slate-300">0x5da17b728ab2d61ab273a1844b4ce0db4c545f95</span>
         <button id="btn-copier" class="text-xs px-3 py-1.5 rounded-lg whitespace-nowrap" style="background:var(--surface); border:1px solid var(--border); color:white;">Copier</button>
       </div>
 
@@ -71,12 +66,6 @@
   </div>
 
   <script>
-    // Configuration Supabase
-    const SUPABASE_URL = 'https://qlsetlqyejwrhztbesto.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4';
-    
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
     // Fonction utilitaire pour les étapes
     function rendreEtapes(container, currentStep) {
         if(!container) return;
@@ -88,13 +77,11 @@
         }
     }
 
-    // Initialisation
-    document.addEventListener('DOMContentLoaded', async () => {
+    // Initialisation - VERSION SIMPLIFIÉE SANS SUPABASE
+    document.addEventListener('DOMContentLoaded', () => {
         rendreEtapes(document.getElementById('barre-etapes'), 2);
 
         const dataJSON = sessionStorage.getItem('transaction_vente');
-        const loadingArea = document.getElementById('loading-area');
-        const qrcodeContainer = document.getElementById('qrcode-container');
         const errorEl = document.getElementById('erreur');
 
         if (!dataJSON) {
@@ -107,37 +94,17 @@
         try {
             const p = JSON.parse(dataJSON);
             
-            // 1. Affichage des données de base (Montant)
+            // Affichage des données de base
             document.getElementById('montant-usdt').textContent = `${p.montant_usdt} USDT`;
             
-            // 2. SYNCHRONISATION : Récupérer l'ADRESSE USDT depuis Supabase (Config Admin)
-            loadingArea.classList.remove('hidden');
-            
-            console.log("Recherche de l'adresse USDT dans la config...");
-
-            const { data: config, error } = await supabase
-                .from('config')
-                .select('adresse_usdt_reception')
-                .limit(1)
-                .single();
-
-            let adresseUSDT = '0x5da17b728ab2d61ab273a1844b4ce0db4c545f95'; // Adresse par défaut si erreur
-            
-            if (error || !config) {
-                console.warn("Config non trouvée ou erreur, utilisation de l'adresse par défaut:", error);
-            } else {
-                adresseUSDT = config.adresse_usdt_reception || adresseUSDT;
-                console.log("✅ Adresse USDT synchronisée depuis l'Admin :", adresseUSDT);
-            }
-
-            // Mise à jour de l'affichage texte
+            // Adresse USDT par défaut (celle que tu as configurée dans l'admin)
+            const adresseUSDT = p.adresse_wallet_usdt || '0x5da17b728ab2d61ab273a1844b4ce0db4c545f95';
             document.getElementById('adresse-usdt').textContent = adresseUSDT;
 
-            // 3. GÉNÉRATION DU QR CODE SYNCHRONISÉ
-            // On vide le conteneur au cas où
+            // Génération du QR Code avec l'adresse par défaut
+            const qrcodeContainer = document.getElementById('qrcode-container');
             qrcodeContainer.innerHTML = '';
             
-            // Création du nouveau QR Code avec l'adresse récupérée
             new QRCode(qrcodeContainer, {
                 text: adresseUSDT,
                 width: 200,
@@ -146,10 +113,6 @@
                 colorLight : "#ffffff",
                 correctLevel : QRCode.CorrectLevel.H
             });
-
-            // Afficher le QR Code et cacher le chargement
-            qrcodeContainer.classList.remove('hidden');
-            loadingArea.classList.add('hidden');
 
             // Gestion du bouton Copier
             document.getElementById('btn-copier').addEventListener('click', () => {
@@ -178,7 +141,6 @@
             console.error(e);
             errorEl.textContent = "Erreur de lecture des données.";
             errorEl.classList.remove('hidden');
-            loadingArea.classList.add('hidden');
         }
     });
   </script>
