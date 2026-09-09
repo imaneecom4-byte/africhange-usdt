@@ -20,7 +20,6 @@
   .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
   .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
   
-  /* Toast Notification */
   #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
   .toast { background: rgba(15, 23, 42, 0.95); color: white; padding: 1rem 1.5rem; border-radius: 0.75rem; box-shadow: 0 10px 25px rgba(0,0,0,0.5); font-size: 0.875rem; display: flex; align-items: center; gap: 0.75rem; min-width: 280px; max-width: 90vw; animation: slideIn 0.3s ease-out forwards; border-left: 4px solid #10b981; pointer-events: auto; }
   .toast.warning { border-left-color: #f59e0b; }
@@ -28,12 +27,11 @@
   @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
   @keyframes fadeOut { to { transform: translateX(100%); opacity: 0; } }
   
-  /* Modal Image */
   #modale-preuve { display: none; }
   #modale-preuve.active { display: flex; }
   
   @media (max-width: 768px) {
-    .lg\\:w-2\\/3, .lg\\:w-1\\/3 { width: 100% !important; }
+    .lg\:w-2\/3, .lg\:w-1\/3 { width: 100% !important; }
     .grid-cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
   }
 </style>
@@ -42,7 +40,6 @@
 
   <div id="toast-container"></div>
 
-  <!-- Header -->
   <nav class="fixed top-0 w-full z-50 glass-panel border-b-0 border-white/10 px-4 py-3 flex justify-between items-center">
     <div class="flex items-center gap-2">
       <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow-lg text-slate-900 font-bold text-lg">₮</div>
@@ -64,7 +61,6 @@
 
   <main class="pt-20 pb-8 px-4 max-w-7xl mx-auto space-y-6">
 
-    <!-- STATS -->
     <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in">
       <div class="glass-card p-4 rounded-xl relative overflow-hidden group">
         <div class="flex justify-between items-start mb-2">
@@ -92,10 +88,8 @@
       </div>
     </section>
 
-    <!-- CONTENU PRINCIPAL -->
     <div class="flex flex-col lg:flex-row gap-6">
       
-      <!-- COLONNE GAUCHE: TRANSACTIONS -->
       <div class="lg:w-2/3 space-y-4 animate-fade-in" style="animation-delay: 0.1s;">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <h2 class="text-lg font-bold text-white flex items-center gap-2"><i class="ph ph-list-dashes text-emerald-400"></i> Transactions Récentes</h2>
@@ -130,10 +124,8 @@
         </div>
       </div>
 
-      <!-- COLONNE DROITE: CONFIG & AGENTS -->
       <div class="lg:w-1/3 space-y-4 animate-fade-in" style="animation-delay: 0.2s;">
         
-        <!-- Config -->
         <div class="glass-card p-4 rounded-xl">
           <h3 class="font-bold text-white mb-3 flex items-center gap-2 text-sm"><i class="ph ph-sliders text-emerald-400"></i> Configuration</h3>
           <form id="form-config" class="space-y-3">
@@ -155,7 +147,6 @@
           </form>
         </div>
 
-        <!-- Agents -->
         <div class="glass-card p-4 rounded-xl flex flex-col h-[400px]">
           <div class="flex justify-between items-center mb-3">
             <h3 class="font-bold text-white flex items-center gap-2 text-sm"><i class="ph ph-users text-amber-400"></i> Agents Mobile Money</h3>
@@ -171,7 +162,6 @@
     </div>
   </main>
 
-  <!-- MODAL PREUVE (ZOOM IMAGE) -->
   <div id="modale-preuve" class="fixed inset-0 bg-black/95 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4" onclick="fermerModale()">
     <div class="relative max-w-4xl w-full max-h-[90vh] flex flex-col items-center">
       <button class="absolute top-4 right-4 text-white hover:text-red-400 text-3xl font-light z-10">&times;</button>
@@ -180,12 +170,11 @@
     </div>
   </div>
 
-  <!-- MODAL AJOUT AGENT -->
   <div id="modale-agent" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-700 rounded-xl p-4 w-full max-w-md shadow-2xl">
       <h3 class="text-base font-bold text-white mb-3">Nouvel Agent</h3>
       <form id="form-nouvel-agent" class="space-y-3">
-        <div><label class="text-[10px] text-slate-400 block mb-1">Pays</label><select id="new-agent-pays" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white outline-none"><option value="Burkina Faso">🇧🇫 Burkina Faso</option><option value="Côte d'Ivoire">🇨🇮 Côte d'Ivoire</option><option value="Bénin">🇯 Bénin</option><option value="Togo">🇹🇬 Togo</option></select></div>
+        <div><label class="text-[10px] text-slate-400 block mb-1">Pays</label><select id="new-agent-pays" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white outline-none"><option value="Burkina Faso">🇧🇫 Burkina Faso</option><option value="Côte d'Ivoire">🇨🇮 Côte d'Ivoire</option><option value="Bénin">🇧🇯 Bénin</option><option value="Togo">🇹🇬 Togo</option></select></div>
         <div><label class="text-[10px] text-slate-400 block mb-1">Opérateur</label><select id="new-agent-operateur" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white outline-none"><option value="Orange Money">Orange Money</option><option value="Moov Money">Moov Money</option><option value="MTN Money">MTN Money</option><option value="Wave">Wave</option></select></div>
         <div><label class="text-[10px] text-slate-400 block mb-1">Numéro</label><input type="text" id="new-agent-numero" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white outline-none" placeholder="+225 07..." required></div>
         <div class="flex gap-2 pt-1"><button type="button" onclick="fermerModalAgent()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-1.5 rounded-lg transition text-xs">Annuler</button><button type="submit" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded-lg font-medium shadow-lg transition text-xs">Créer</button></div>
@@ -193,19 +182,16 @@
     </div>
   </div>
 
-  <!-- SCRIPT LOGIQUE COMPLÈTE -->
   <script>
-    // --- CONFIG SUPABASE ---
     const SB_URL = 'https://qlsetlqyejwrhztbesto.supabase.co';
     const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4';
     const supabase = window.supabase.createClient(SB_URL, SB_KEY);
 
-    // --- TOAST NOTIFICATION ---
     function showToast(message, type = 'info') {
       const container = document.getElementById('toast-container');
       const toast = document.createElement('div');
       toast.className = `toast ${type === 'warning' ? 'warning' : type === 'error' ? 'error' : ''}`;
-      let icon = '';
+      let icon = '🔔';
       if (type === 'success') icon = '✅';
       if (type === 'error') icon = '❌';
       if (type === 'warning') icon = '⚠️';
@@ -217,17 +203,21 @@
       }, 4000);
     }
 
-    // --- AUTH ---
+    // --- CORRECTION : Ajout de la fonction de déconnexion ---
+    function deconnexionAdmin() {
+      if(confirm("Voulez-vous vraiment vous déconnecter ?")) {
+        sessionStorage.removeItem('africhange_admin_session');
+        window.location.href = '/admin-login.html';
+      }
+    }
+
     async function verifierAuth() {
-      // Simulation simple pour l'instant (à remplacer par vraie auth plus tard)
       if (!sessionStorage.getItem('africhange_admin_session')) {
-         // Pour tester, on crée une session fake si elle n'existe pas
          sessionStorage.setItem('africhange_admin_session', 'true');
       }
     }
     verifierAuth();
 
-    // --- STATS ---
     async function rafraichirStats() {
       try {
         const { data, error } = await supabase.from('transactions').select('type_transaction, montant_usdt, benefice_estime').eq('statut', 'valide');
@@ -244,7 +234,6 @@
       } catch (e) { console.error(e); }
     }
 
-    // --- TRANSACTIONS (AVEC GESTION DES PREUVES ET ACTIONS) ---
     async function rafraichirTransactions() {
       const corps = document.getElementById('corps-tableau');
       corps.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-500">Actualisation...</td></tr>';
@@ -271,7 +260,7 @@
           const montantUSDT = t.montant_usdt || 0;
           const montantFCFA = t.montant_fcfa || 0;
           const statutTx = t.statut || 'en_attente';
-          const preuveUrl = t.preuve_url || null; // Récupération de l'URL de l'image
+          const preuveUrl = t.preuve_url || null; 
           
           const isAchat = typeTx === 'achat';
           const typeBadge = isAchat 
@@ -285,16 +274,13 @@
 
           let actionsHtml = '<span class="text-[10px] text-slate-600 italic">Terminé</span>';
           if (statutTx === 'en_attente') {
-              // Boutons d'action + Bouton Voir Preuve si disponible
               let btnPreuve = preuveUrl ? `<button onclick="ouvrirModale('${preuveUrl}', '${nomClient}')" class="p-1.5 rounded-lg bg-slate-700 hover:bg-blue-500 text-white transition" title="Voir Preuve"><i class="ph ph-eye text-sm"></i></button>` : '';
-              
               actionsHtml = `<div class="flex justify-end gap-1">
                     <button onclick="validerTransaction('${t.id}')" class="p-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition" title="Valider"><i class="ph ph-check text-sm"></i></button>
                     <button onclick="rejeterTransaction('${t.id}')" class="p-1.5 rounded-lg bg-slate-700 hover:bg-red-500 text-white transition" title="Rejeter"><i class="ph ph-x text-sm"></i></button>
                     ${btnPreuve}
                   </div>`;
           } else if (preuveUrl && statutTx !== 'rejete') {
-              // Si validé mais qu'il y a une preuve, on garde le bouton voir
                actionsHtml = `<button onclick="ouvrirModale('${preuveUrl}', '${nomClient}')" class="p-1.5 rounded-lg bg-slate-700 hover:bg-blue-500 text-white transition" title="Voir Preuve"><i class="ph ph-eye text-sm"></i></button>`;
           }
 
@@ -310,7 +296,7 @@
         }).join('');
       } catch (e) {
         console.error(e);
-        corps.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-red-400 text-xs">Erreur: ${e.message}. Vérifiez la console (F12).</td></tr>`;
+        corps.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-red-400 text-xs">Erreur: ${e.message}.</td></tr>`;
       }
     }
 
@@ -319,67 +305,41 @@
         return parseFloat(montant).toLocaleString('fr-FR') + ' FCFA';
     }
 
-    // --- ACTIONS SUR LES TRANSACTIONS (VALIDER / REJETER) ---
     async function validerTransaction(id) {
-      if(!confirm("Confirmer la validation de cette transaction ?")) return;
-      
+      if(!confirm("Confirmer la validation ?")) return;
       try {
-        // Mise à jour du statut dans Supabase
-        const { error } = await supabase
-            .from('transactions')
-            .update({ statut: 'valide' })
-            .eq('id', id);
-            
+        const { error } = await supabase.from('transactions').update({ statut: 'valide' }).eq('id', id);
         if (error) throw error;
-        
-        showToast("Transaction validée avec succès !", "success");
+        showToast("Transaction validée !", "success");
         rafraichirTransactions();
         rafraichirStats();
       } catch (e) {
         console.error(e);
-        showToast("Erreur lors de la validation.", "error");
+        showToast("Erreur validation.", "error");
       }
     }
 
     async function rejeterTransaction(id) {
-      const motif = prompt("Motif du rejet (obligatoire) :");
-      if (motif === null) return; // Annulé
-      if (!motif.trim()) {
-        alert("Le motif est obligatoire.");
-        return;
-      }
-
+      const motif = prompt("Motif du rejet :");
+      if (motif === null) return; 
+      if (!motif.trim()) { alert("Motif obligatoire."); return; }
       try {
-        // Mise à jour du statut dans Supabase
-        const { error } = await supabase
-            .from('transactions')
-            .update({ statut: 'rejete', motif_rejet: motif })
-            .eq('id', id);
-            
+        const { error } = await supabase.from('transactions').update({ statut: 'rejete', motif_rejet: motif }).eq('id', id);
         if (error) throw error;
-        
         showToast("Transaction rejetée.", "error");
         rafraichirTransactions();
       } catch (e) {
         console.error(e);
-        showToast("Erreur lors du rejet.", "error");
+        showToast("Erreur rejet.", "error");
       }
     }
 
-    // --- GESTION MODALE IMAGE ---
     function ouvrirModale(url, clientName) {
       const modal = document.getElementById('modale-preuve');
-      const img = document.getElementById('modale-image');
-      const info = document.getElementById('modale-info');
-      
-      // Gestion des URL relatives vs absolues si nécessaire
-      // Si l'URL vient de Storage, elle peut être relative ou complète selon ta config
-      // Ici on suppose que c'est une URL directe ou relative valide
-      img.src = url; 
-      info.textContent = `Preuve de paiement pour : ${clientName}`;
-      
+      document.getElementById('modale-image').src = url; 
+      document.getElementById('modale-info').textContent = `Preuve pour : ${clientName}`;
       modal.classList.remove('hidden');
-      modal.classList.add('active'); // Pour l'affichage flex
+      modal.classList.add('active'); 
     }
 
     function fermerModale() {
@@ -389,26 +349,25 @@
       document.getElementById('modale-image').src = "";
     }
 
-    // --- NOTIFICATIONS ---
     let dernierNbAttente = 0;
     function verifierNouvellesTransactions(data) {
       const nb = data.filter(t => t.statut === 'en_attente').length;
       if (nb > 0 && nb > dernierNbAttente) {
-        showToast(`🔔 ${nb} nouvelle(s) transaction(s) en attente !`, 'warning');
+        showToast(`🔔 ${nb} nouvelle(s) transaction(s) !`, 'warning');
       }
       dernierNbAttente = nb;
       const badge = document.getElementById('badge-notif');
       if (nb > 0) { badge.textContent = nb; badge.classList.remove('hidden'); } else { badge.classList.add('hidden'); }
     }
-    function afficherNotifications() { showToast(`Vous avez ${dernierNbAttente} transaction(s) en attente.`, 'info'); document.getElementById('filtre-statut').value = 'en_attente'; rafraichirTransactions(); }
+    function afficherNotifications() { showToast(`${dernierNbAttente} en attente.`, 'info'); document.getElementById('filtre-statut').value = 'en_attente'; rafraichirTransactions(); }
 
-    // --- AGENTS ---
+    // --- CORRECTION AGENTS : Utilisation de 'numero_telephone' au lieu de 'numero' ---
     async function chargerAgentsUI() {
       try {
         const { data, error } = await supabase.from('agents').select('*').order('pays');
         if (error) throw error;
         const container = document.getElementById('liste-agents-admin');
-        if (!data || data.length === 0) { container.innerHTML = '<div class="text-center text-slate-500 text-xs py-4">Aucun agent configuré.</div>'; return; }
+        if (!data || data.length === 0) { container.innerHTML = '<div class="text-center text-slate-500 text-xs py-4">Aucun agent.</div>'; return; }
         container.innerHTML = data.map(a => `
           <div class="bg-slate-950/50 border border-slate-800 p-2 rounded-lg flex flex-col gap-2 hover:border-emerald-500/30 transition group">
             <div class="flex justify-between items-start">
@@ -418,23 +377,80 @@
               </div>
             </div>
             <div class="flex gap-2 items-center">
-              <input type="text" value="${a.numero || ''}" class="flex-1 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-[10px] text-white focus:border-emerald-500 outline-none" id="input-agent-${a.id}">
+              <!-- CORRECTION ICI : a.numero_telephone -->
+              <input type="text" value="${a.numero_telephone || ''}" class="flex-1 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-[10px] text-white focus:border-emerald-500 outline-none" id="input-agent-${a.id}">
               <button onclick="sauverAgent('${a.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] px-2 py-1 rounded font-medium transition">OK</button>
             </div>
           </div>
         `).join('');
       } catch (e) { console.error(e); }
     }
-    async function sauverAgent(id) { const input = document.getElementById(`input-agent-${id}`); const btn = input.nextElementSibling; const oldText = btn.textContent; btn.textContent = '...'; try { const { error } = await supabase.from('agents').update({ numero: input.value }).eq('id', id); if(error) throw error; btn.textContent = '✓'; showToast("Numéro mis à jour", "success"); setTimeout(() => btn.textContent = oldText, 1500); } catch (e) { alert("Erreur: " + e.message); btn.textContent = oldText; } }
-    async function supprimerAgent(id) { if(!confirm("Supprimer cet agent ?")) return; try { const { error } = await supabase.from('agents').delete().eq('id', id); if(error) throw error; chargerAgentsUI(); showToast("Agent supprimé", "error"); } catch(e) { alert("Erreur suppression"); } }
+    
+    async function sauverAgent(id) { 
+        const input = document.getElementById(`input-agent-${id}`); 
+        const btn = input.nextElementSibling; 
+        const oldText = btn.textContent; 
+        btn.textContent = '...'; 
+        try { 
+            // CORRECTION ICI : update numero_telephone
+            const { error } = await supabase.from('agents').update({ numero_telephone: input.value }).eq('id', id); 
+            if(error) throw error; 
+            btn.textContent = '✓'; 
+            showToast("Numéro mis à jour", "success"); 
+            setTimeout(() => btn.textContent = oldText, 1500); 
+        } catch (e) { 
+            alert("Erreur: " + e.message); 
+            btn.textContent = oldText; 
+        } 
+    }
+    
+    async function supprimerAgent(id) { 
+        if(!confirm("Supprimer ?")) return; 
+        try { 
+            const { error } = await supabase.from('agents').delete().eq('id', id); 
+            if(error) throw error; 
+            chargerAgentsUI(); 
+            showToast("Agent supprimé", "error"); 
+        } catch(e) { alert("Erreur"); } 
+    }
+    
     function ouvrirModalAgent() { document.getElementById('modale-agent').classList.remove('hidden'); }
     function fermerModalAgent() { document.getElementById('modale-agent').classList.add('hidden'); }
-    document.getElementById('form-nouvel-agent').addEventListener('submit', async (e) => { e.preventDefault(); const pays = document.getElementById('new-agent-pays').value; const op = document.getElementById('new-agent-operateur').value; const num = document.getElementById('new-agent-numero').value; try { const { error } = await supabase.from('agents').insert([{ pays, operateur: op, numero: num }]); if(error) throw error; fermerModalAgent(); chargerAgentsUI(); showToast("Agent ajouté !", "success"); } catch(err) { alert("Erreur: " + err.message); } });
+    
+    document.getElementById('form-nouvel-agent').addEventListener('submit', async (e) => { 
+        e.preventDefault(); 
+        const pays = document.getElementById('new-agent-pays').value; 
+        const op = document.getElementById('new-agent-operateur').value; 
+        const num = document.getElementById('new-agent-numero').value; 
+        try { 
+            // CORRECTION ICI : insert numero_telephone
+            const { error } = await supabase.from('agents').insert([{ pays, operateur: op, numero_telephone: num, actif: true }]); 
+            if(error) throw error; 
+            fermerModalAgent(); 
+            chargerAgentsUI(); 
+            showToast("Agent ajouté !", "success"); 
+        } catch(err) { alert("Erreur: " + err.message); } 
+    });
 
-    // --- CONFIG FORM ---
-    document.getElementById('form-config').addEventListener('submit', async (e) => { e.preventDefault(); const btn = e.target.querySelector('button'); btn.textContent = 'Enregistrement...'; try { const { error } = await supabase.from('config').update({ taux_achat_client: parseFloat(document.getElementById('cfg-taux-achat').value), taux_vente_client: parseFloat(document.getElementById('cfg-taux-vente').value), adresse_usdt_reception: document.getElementById('cfg-adresse').value }).eq('id', 1); if(error) throw error; showToast("Configuration sauvegardée !", "success"); } catch(err) { showToast("Erreur sauvegarde", "error"); alert("Erreur: " + err.message); } btn.textContent = 'Sauvegarder'; });
+    document.getElementById('form-config').addEventListener('submit', async (e) => { 
+        e.preventDefault(); 
+        const btn = e.target.querySelector('button'); 
+        btn.textContent = '...'; 
+        try { 
+            const { error } = await supabase.from('config').update({ 
+                taux_achat_client: parseFloat(document.getElementById('cfg-taux-achat').value), 
+                taux_vente_client: parseFloat(document.getElementById('cfg-taux-vente').value), 
+                adresse_usdt_reception: document.getElementById('cfg-adresse').value 
+            }).eq('id', 1); 
+            if(error) throw error; 
+            showToast("Config sauvegardée !", "success"); 
+        } catch(err) { 
+            showToast("Erreur", "error"); 
+            alert("Erreur: " + err.message); 
+        } 
+        btn.textContent = 'Sauvegarder'; 
+    });
 
-    // --- INIT ---
     rafraichirStats();
     rafraichirTransactions();
     chargerAgentsUI();
