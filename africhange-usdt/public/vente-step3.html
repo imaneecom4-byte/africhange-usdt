@@ -6,17 +6,11 @@
 <title>Vendre des USDT — Étape 3 · Preuve</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/css/style.css" />
+<!-- Supabase JS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  /* Style pour forcer le clic sur mobile */
-  .upload-zone {
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .upload-zone:active {
-    transform: scale(0.98);
-    background-color: rgba(245, 158, 11, 0.1);
-  }
+  .upload-zone { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .upload-zone:active { transform: scale(0.98); background-color: rgba(245, 158, 11, 0.1); }
 </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-5 bg-slate-900 text-white">
@@ -30,7 +24,6 @@
 
     <div class="card glow-vente p-7 relative">
       
-      <!-- Erreur Session -->
       <div id="error-container" class="hidden absolute inset-0 bg-slate-900/95 z-10 flex flex-col items-center justify-center text-center p-6 rounded-2xl">
         <div class="text-red-500 text-4xl mb-4">⚠️</div>
         <h2 class="text-xl font-bold mb-2">Session Expirée</h2>
@@ -41,19 +34,15 @@
         <h1 class="font-display text-2xl font-semibold mb-1">Preuve de transaction</h1>
         <p class="text-sm text-slate-400 mb-6">Indiquez le hash (TxID) et ajoutez une capture.</p>
 
-        <!-- Champ Hash TxID -->
         <label class="text-xs text-slate-400 mb-1 block font-medium">Hash de transaction (TxID)</label>
         <input type="text" id="txid" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition mb-4" placeholder="Ex : 0x8f3c...a91d" />
 
-        <!-- Zone de dépôt corrigée pour mobile -->
         <div id="zone-depot" class="upload-zone block border-2 border-dashed border-slate-600 rounded-2xl p-6 text-center bg-slate-800/50 mb-4">
           <div class="text-2xl mb-2">📎</div>
           <p class="text-sm text-slate-300 font-medium" id="texte-depot">Cliquez ici pour ajouter une capture (optionnel)</p>
         </div>
         
-        <!-- Input caché -->
         <input type="file" id="fichier-preuve" accept="image/*" class="hidden" />
-
         <p id="erreur-msg" class="text-sm text-rose-400 hidden mb-3 text-center"></p>
         
         <button id="btn-envoyer" class="btn w-full bg-amber-600 hover:bg-amber-500 text-white py-3 rounded-xl font-bold shadow-lg transition disabled:opacity-50">
@@ -64,11 +53,25 @@
   </div>
 
   <script>
+    // --- CONFIGURATION UNIQUE ---
     const SB_URL = 'https://qlsetlqyejwrhztbesto.supabase.co';
     const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4';
-    const supabase = window.supabase.createClient(SB_URL, SB_KEY);
+    
+    // On utilise 'sbClient' pour éviter le conflit
+    const sbClient = window.supabase.createClient(SB_URL, SB_KEY);
 
     document.addEventListener('DOMContentLoaded', () => {
+        // Rendu des étapes
+        const barre = document.getElementById('barre-etapes');
+        if(barre) {
+            barre.innerHTML = '';
+            for(let i=1; i<=5; i++) {
+                const p = document.createElement('div');
+                p.className = `etape-point ${i < 3 ? 'faite' : ''} ${i === 3 ? 'active' : ''}`;
+                barre.appendChild(p);
+            }
+        }
+
         const dataJSON = sessionStorage.getItem('transaction_vente');
         if (!dataJSON) {
             document.getElementById('form-container').classList.add('hidden');
@@ -84,17 +87,14 @@
         const errorMsg = document.getElementById('erreur-msg');
         const txidInput = document.getElementById('txid');
 
-        // --- CORRECTION MOBILE : Forcer le clic via JS ---
         zone.addEventListener('click', (e) => {
             e.preventDefault();
             input.click();
         });
 
-        // Quand un fichier est choisi
         input.addEventListener('change', () => {
             if (input.files && input.files[0]) {
-                const fileName = input.files[0].name;
-                texte.textContent = "✅ " + fileName;
+                texte.textContent = "✅ " + input.files[0].name;
                 texte.classList.add('text-amber-400');
                 zone.classList.add('border-amber-500', 'bg-amber-500/10');
                 zone.classList.remove('border-slate-600');
@@ -102,11 +102,8 @@
             }
         });
 
-        // Envoi
         btn.addEventListener('click', async () => {
             const txid = txidInput.value.trim();
-            
-            // Vérification du TxID (Obligatoire pour la vente)
             if (!txid) {
                 errorMsg.textContent = "Le Hash (TxID) est obligatoire.";
                 errorMsg.classList.remove('hidden');
@@ -119,26 +116,24 @@
             try {
                 let publicUrl = null;
 
-                // 1. Upload du fichier SI présent (Optionnel pour la vente)
                 if (input.files && input.files[0]) {
                     const file = input.files[0];
                     const fileName = `${transaction.id}-${Date.now()}.jpg`;
                     
-                    const { data: uploadData, error: uploadError } = await supabase.storage
+                    const { error: uploadError } = await sbClient.storage
                         .from('preuves')
                         .upload(fileName, file);
 
                     if (uploadError) throw uploadError;
 
-                    const { data: urlData } = supabase.storage.from('preuves').getPublicUrl(fileName);
+                    const { data: urlData } = sbClient.storage.from('preuves').getPublicUrl(fileName);
                     publicUrl = urlData.publicUrl;
                 }
 
-                // 2. Mettre à jour la transaction (TxID + URL image si existe)
                 const updateData = { hash_transaction: txid };
                 if (publicUrl) updateData.preuve_url = publicUrl;
 
-                const { error: updateError } = await supabase
+                const { error: updateError } = await sbClient
                     .from('transactions')
                     .update(updateData)
                     .eq('id', transaction.id);
