@@ -6,6 +6,8 @@
 <title>Vendre des USDT — Étape 4 · Vérification</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/css/style.css" />
+<!-- On ajoute Supabase pour pouvoir vérifier le statut -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="min-h-screen flex items-center justify-center p-5">
 
@@ -26,29 +28,97 @@
       <p id="statut-rejete" class="text-sm text-rose-400 mt-4 hidden">
         Votre transaction a été rejetée. Contactez le support pour plus d'informations.
       </p>
+      <p id="erreur-chargement" class="text-sm text-red-400 mt-4 hidden">
+        Impossible de charger les détails de la transaction.
+      </p>
     </div>
   </div>
 
-  <script src="/js/main.js"></script>
   <script>
-    rendreEtapes(document.getElementById('barre-etapes'), 4);
-    const p = exigerParcours(['transaction_id'], '/vente-step1.html');
+    // Configuration Supabase
+    const SUPABASE_URL = 'https://qlsetlqyejwrhztbesto.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4';
+    
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    async function verifier() {
-      try {
-        const { statut } = await verifierStatut(p.transaction_id);
-        if (statut === 'valide') {
-          window.location.href = '/vente-step5.html';
-        } else if (statut === 'rejete') {
-          document.getElementById('statut-rejete').classList.remove('hidden');
+    // Fonction utilitaire pour les étapes
+    function rendreEtapes(container, currentStep) {
+        if(!container) return;
+        container.innerHTML = '';
+        for(let i=1; i<=5; i++) {
+            const point = document.createElement('div');
+            point.className = `etape-point ${i < currentStep ? 'faite' : ''} ${i === currentStep ? 'active' : ''}`;
+            container.appendChild(point);
         }
-      } catch (e) {
-        // silencieux : on retentera au prochain intervalle
-      }
     }
 
-    verifier();
-    setInterval(verifier, 6000);
+    // Initialisation - VERSION CORRIGÉE SANS exigerParcours
+    document.addEventListener('DOMContentLoaded', () => {
+        rendreEtapes(document.getElementById('barre-etapes'), 4);
+
+        const dataJSON = sessionStorage.getItem('transaction_vente');
+        const erreurEl = document.getElementById('erreur-chargement');
+        const rejeteEl = document.getElementById('statut-rejete');
+
+        if (!dataJSON) {
+            // Si pas de données, on affiche une erreur
+            erreurEl.textContent = "Aucune transaction trouvée. Veuillez recommencer.";
+            erreurEl.classList.remove('hidden');
+            
+            // Redirection automatique après 3 secondes si échec
+            setTimeout(() => {
+                window.location.href = '/vente-step1.html';
+            }, 3000);
+            return;
+        }
+
+        try {
+            const p = JSON.parse(dataJSON);
+            const transactionId = p.id; // On récupère l'ID de la transaction
+            
+            console.log("Vérification du statut pour la transaction:", transactionId);
+
+            // Fonction pour vérifier le statut
+            async function verifierStatut() {
+                try {
+                    const { data, error } = await supabase
+                        .from('transactions')
+                        .select('statut')
+                        .eq('id', transactionId)
+                        .single();
+
+                    if (error) {
+                        console.error("Erreur lors de la vérification:", error);
+                        return;
+                    }
+
+                    if (data) {
+                        console.log("Statut actuel:", data.statut);
+                        
+                        if (data.statut === 'validée') { // Note: orthographe avec accent selon ta BDD
+                            window.location.href = '/vente-step5.html';
+                        } else if (data.statut === 'rejete' || data.statut === 'échouée') {
+                            rejeteEl.classList.remove('hidden');
+                            // On arrête de vérifier si c'est rejeté
+                            clearInterval(intervalleVerification);
+                        }
+                    }
+                } catch (e) {
+                    console.error("Erreur silencieuse ignorée:", e);
+                }
+            }
+
+            // Vérification immédiate
+            verifierStatut();
+
+            // Vérification toutes les 6 secondes
+            const intervalleVerification = setInterval(verifierStatut, 6000);
+
+        } catch (e) {
+            console.error("Erreur de parsing des données:", e);
+            erreurEl.classList.remove('hidden');
+        }
+    });
   </script>
 </body>
 </html>
