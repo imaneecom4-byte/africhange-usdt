@@ -7,130 +7,109 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/css/style.css" />
 </head>
-<body class="min-h-screen flex items-center justify-center p-5">
+<body class="min-h-screen flex items-center justify-center p-5 bg-slate-900 text-white">
 
   <div class="w-full max-w-md entree-ecran">
+    <!-- Barre de navigation -->
     <div class="flex items-center justify-between mb-4">
       <a href="/achat-step2.html" class="text-sm text-slate-400 hover:text-slate-200">&larr; Retour</a>
       <span class="text-xs text-slate-500">Étape 3 sur 5</span>
     </div>
 
+    <!-- Barre de progression -->
     <div class="etapes mb-6" id="barre-etapes"></div>
 
-    <div class="card glow-achat p-7">
-      <h1 class="font-display text-2xl font-semibold mb-1">Preuve de paiement</h1>
-      <p class="text-sm text-slate-400 mb-6">Ajoutez la capture d'écran de la confirmation Mobile Money.</p>
-
-      <!-- Zone de chargement / Erreur -->
-      <div id="loading-area" class="text-center py-4 hidden">
-        <p class="text-slate-300 animate-pulse">Chargement des détails...</p>
+    <!-- Carte Principale -->
+    <div class="card glow-achat p-7 relative">
+      
+      <!-- Message d'Erreur (Caché par défaut) -->
+      <div id="error-container" class="hidden absolute inset-0 bg-slate-900/95 z-10 flex flex-col items-center justify-center text-center p-6 rounded-2xl">
+        <div class="text-red-500 text-4xl mb-4">⚠️</div>
+        <h2 class="text-xl font-bold mb-2">Session Expirée</h2>
+        <p class="text-sm text-slate-400 mb-6">Aucune transaction en cours n'a été trouvée.</p>
+        <button onclick="window.location.href='/achat-step1.html'" class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-lg font-medium">Recommencer</button>
       </div>
 
-      <label for="fichier-preuve" id="zone-depot" class="block border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition" style="border-color:var(--border)">
-        <div class="text-3xl mb-2">📎</div>
-        <p class="text-sm text-slate-300" id="texte-depot">Cliquez pour choisir une image</p>
-        <p class="text-xs text-slate-500 mt-1">PNG, JPG — 8 Mo maximum</p>
-        <input type="file" id="fichier-preuve" accept="image/*" class="hidden" />
-      </label>
+      <!-- Contenu Formulaire -->
+      <div id="form-container">
+        <h1 class="font-display text-2xl font-semibold mb-1">Preuve de paiement</h1>
+        <p class="text-sm text-slate-400 mb-6">Ajoutez la capture d'écran de la confirmation Mobile Money.</p>
 
-      <p id="erreur" class="text-sm text-rose-400 hidden mt-4"></p>
-      <button id="btn-envoyer" class="btn btn-primary w-full mt-6">Envoyer la preuve</button>
+        <label for="fichier-preuve" id="zone-depot" class="block border-2 border-dashed border-slate-600 hover:border-emerald-500 rounded-2xl p-8 text-center cursor-pointer transition bg-slate-800/50">
+          <div class="text-3xl mb-2">📎</div>
+          <p class="text-sm text-slate-300 font-medium" id="texte-depot">Cliquez pour choisir une image</p>
+          <p class="text-xs text-slate-500 mt-1">PNG, JPG — 8 Mo maximum</p>
+          <input type="file" id="fichier-preuve" accept="image/*" class="hidden" />
+        </label>
+
+        <p id="erreur-msg" class="text-sm text-rose-400 hidden mt-4 text-center"></p>
+        
+        <button id="btn-envoyer" class="btn btn-primary w-full mt-6 bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-bold shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
+          Envoyer la preuve
+        </button>
+      </div>
     </div>
   </div>
 
   <script>
-    // Fonction utilitaire pour les étapes (si main.js n'est pas chargé ou pour éviter les conflits)
-    function rendreEtapes(container, currentStep) {
-        if(!container) return;
-        container.innerHTML = '';
-        for(let i=1; i<=5; i++) {
-            const point = document.createElement('div');
-            point.className = `etape-point ${i < currentStep ? 'faite' : ''} ${i === currentStep ? 'active' : ''}`;
-            container.appendChild(point);
-        }
-    }
-
-    // Initialisation - VERSION CORRIGÉE SANS exigerParcours
+    // --- LOGIQUE DE SÉCURITÉ ET AFFICHAGE ---
     document.addEventListener('DOMContentLoaded', () => {
-        rendreEtapes(document.getElementById('barre-etapes'), 3);
+        const errorContainer = document.getElementById('error-container');
+        const formContainer = document.getElementById('form-container');
+        const errorMsg = document.getElementById('erreur-msg');
 
+        // 1. Récupération des données
         const dataJSON = sessionStorage.getItem('transaction_achat');
-        const loadingArea = document.getElementById('loading-area');
-        const errorEl = document.getElementById('erreur');
 
         if (!dataJSON) {
-            // Si pas de données, on affiche une erreur claire au lieu de rediriger immédiatement
-            loadingArea.classList.add('hidden');
-            errorEl.textContent = "Aucune transaction trouvée. Veuillez recommencer depuis le début.";
-            errorEl.classList.remove('hidden');
-            
-            // Redirection automatique après 3 secondes si échec
-            setTimeout(() => {
-                window.location.href = '/achat-step1.html';
-            }, 3000);
-            return;
+            // CAS D'ERREUR : Pas de données -> On affiche l'écran d'erreur
+            console.error("Aucune donnée transaction_achat trouvée !");
+            formContainer.classList.add('hidden');
+            errorContainer.classList.remove('hidden');
+            return; // On arrête tout ici
         }
 
+        // CAS SUCCÈS : Données trouvées -> On affiche le formulaire
         try {
-            const p = JSON.parse(dataJSON);
-            console.log("Données de transaction reçues:", p);
-            
-            // On peut afficher quelques infos si besoin (optionnel)
-            // document.getElementById('info-client').textContent = `${p.prenom} ${p.nom}`;
+            const transaction = JSON.parse(dataJSON);
+            console.log("✅ Transaction chargée :", transaction.id);
 
-            // Gestion du fichier
+            // Gestion du changement de nom de fichier
             const input = document.getElementById('fichier-preuve');
             input.addEventListener('change', () => {
-                if (input.files[0]) {
-                    document.getElementById('texte-depot').textContent = input.files[0].name;
+                if (input.files && input.files[0]) {
+                    document.getElementById('texte-depot').textContent = "Fichier sélectionné : " + input.files[0].name;
+                    document.getElementById('zone-depot').classList.add('border-emerald-500', 'bg-emerald-500/10');
+                    document.getElementById('erreur-msg').classList.add('hidden');
                 }
             });
 
-            // Gestion du bouton "Envoyer la preuve"
+            // Gestion du bouton Envoyer
             document.getElementById('btn-envoyer').addEventListener('click', async () => {
-                const bouton = document.getElementById('btn-envoyer');
-                const erreurEl = document.getElementById('erreur');
-                erreurEl.classList.add('hidden');
-
-                if (!input.files[0]) {
-                    return afficherErreur(erreurEl, "Veuillez sélectionner une image avant de continuer.");
+                const btn = document.getElementById('btn-envoyer');
+                
+                if (!input.files || !input.files[0]) {
+                    errorMsg.textContent = "Veuillez sélectionner une image avant de continuer.";
+                    errorMsg.classList.remove('hidden');
+                    return;
                 }
 
-                bouton.disabled = true;
-                bouton.textContent = 'Envoi en cours…';
+                // Simulation d'envoi (Bouton désactivé)
+                btn.disabled = true;
+                btn.textContent = "Envoi en cours...";
 
-                try {
-                    // Ici, tu devrais appeler ta fonction pour envoyer le fichier à Supabase
-                    // Pour l'instant, on simule juste la réussite
-                    console.log("Envoi de la preuve pour la transaction:", p.id);
-                    
-                    // Simulation de succès (remplace ceci par ton vrai appel API/Supabase plus tard)
-                    await new Promise(resolve => setTimeout(resolve, 1000)); 
-                    
+                // ICI : Tu devras ajouter ton code pour envoyer le fichier à Supabase plus tard
+                // Pour l'instant, on simule un succès après 1.5 seconde
+                setTimeout(() => {
+                    console.log("Preuve envoyée avec succès (Simulation)");
                     window.location.href = '/achat-step4.html';
-                    
-                } catch (e) {
-                    console.error(e);
-                    afficherErreur(erreurEl, e.message || "Erreur lors de l'envoi.");
-                    bouton.disabled = false;
-                    bouton.textContent = 'Envoyer la preuve';
-                }
+                }, 1500);
             });
-
-            // Fonction utilitaire pour afficher les erreurs (si elle n'est pas dans main.js)
-            function afficherErreur(element, message) {
-                element.textContent = message;
-                element.classList.remove('hidden');
-            }
 
         } catch (e) {
-            console.error("Erreur de parsing des données:", e);
-            loadingArea.classList.add('hidden');
-            errorEl.textContent = "Erreur de lecture des données. Veuillez recommencer.";
-            errorEl.classList.remove('hidden');
-            setTimeout(() => {
-                window.location.href = '/achat-step1.html';
-            }, 3000);
+            console.error("Erreur lecture JSON:", e);
+            formContainer.classList.add('hidden');
+            errorContainer.classList.remove('hidden');
         }
     });
   </script>
