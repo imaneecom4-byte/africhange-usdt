@@ -3,50 +3,43 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Vendre des USDT — Étape 3 · Preuve de transaction</title>
+<title>Vendre des USDT — Étape 3 · Preuve</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/css/style.css" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="min-h-screen flex items-center justify-center p-5 bg-slate-900 text-white">
 
   <div class="w-full max-w-md entree-ecran">
-    <!-- Barre de navigation -->
     <div class="flex items-center justify-between mb-4">
       <a href="/vente-step2.html" class="text-sm text-slate-400 hover:text-slate-200">&larr; Retour</a>
       <span class="text-xs text-slate-500">Étape 3 sur 5</span>
     </div>
-
-    <!-- Barre de progression -->
     <div class="etapes mb-6" id="barre-etapes"></div>
 
-    <!-- Carte Principale -->
     <div class="card glow-vente p-7 relative">
-      
-      <!-- Message d'Erreur (Caché par défaut) -->
       <div id="error-container" class="hidden absolute inset-0 bg-slate-900/95 z-10 flex flex-col items-center justify-center text-center p-6 rounded-2xl">
         <div class="text-red-500 text-4xl mb-4">⚠️</div>
         <h2 class="text-xl font-bold mb-2">Session Expirée</h2>
-        <p class="text-sm text-slate-400 mb-6">Aucune transaction en cours n'a été trouvée.</p>
-        <button onclick="window.location.href='/vente-step1.html'" class="bg-amber-600 hover:bg-amber-500 text-white px-6 py-2 rounded-lg font-medium">Recommencer</button>
+        <button onclick="window.location.href='/vente-step1.html'" class="bg-amber-600 text-white px-6 py-2 rounded-lg">Recommencer</button>
       </div>
 
-      <!-- Contenu Formulaire -->
       <div id="form-container">
         <h1 class="font-display text-2xl font-semibold mb-1">Preuve de transaction</h1>
-        <p class="text-sm text-slate-400 mb-6">Indiquez le hash (TxID) de votre envoi crypto.</p>
+        <p class="text-sm text-slate-400 mb-6">Indiquez le hash (TxID) et ajoutez une capture.</p>
 
-        <label class="text-xs text-slate-400 mb-1 block font-medium">Hash de transaction (TxID)</label>
-        <input type="text" id="txid" class="champ w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition mb-4" placeholder="Ex : 0x8f3c...a91d" />
+        <label class="text-xs text-slate-400 mb-1 block">Hash (TxID)</label>
+        <input type="text" id="txid" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white mb-4" placeholder="0x..." />
 
         <label for="fichier-preuve" id="zone-depot" class="block border-2 border-dashed border-slate-600 hover:border-amber-500 rounded-2xl p-6 text-center cursor-pointer transition bg-slate-800/50 mb-4">
           <div class="text-2xl mb-2">📎</div>
-          <p class="text-sm text-slate-300 font-medium" id="texte-depot">Ajouter une capture d'écran (optionnel)</p>
+          <p class="text-sm text-slate-300 font-medium" id="texte-depot">Capture d'écran (optionnel)</p>
           <input type="file" id="fichier-preuve" accept="image/*" class="hidden" />
         </label>
 
         <p id="erreur-msg" class="text-sm text-rose-400 hidden mb-3 text-center"></p>
         
-        <button id="btn-envoyer" class="btn w-full bg-amber-600 hover:bg-amber-500 text-white py-3 rounded-xl font-bold shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
+        <button id="btn-envoyer" class="btn w-full bg-amber-600 hover:bg-amber-500 text-white py-3 rounded-xl font-bold shadow-lg transition disabled:opacity-50">
           Envoyer la preuve
         </button>
       </div>
@@ -54,65 +47,80 @@
   </div>
 
   <script>
-    // --- LOGIQUE DE SÉCURITÉ ET AFFICHAGE ---
+    const SB_URL = 'https://qlsetlqyejwrhztbesto.supabase.co';
+    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4';
+    const supabase = window.supabase.createClient(SB_URL, SB_KEY);
+
     document.addEventListener('DOMContentLoaded', () => {
-        const errorContainer = document.getElementById('error-container');
-        const formContainer = document.getElementById('form-container');
+        const dataJSON = sessionStorage.getItem('transaction_vente');
+        if (!dataJSON) {
+            document.getElementById('form-container').classList.add('hidden');
+            document.getElementById('error-container').classList.remove('hidden');
+            return;
+        }
+
+        const transaction = JSON.parse(dataJSON);
+        const input = document.getElementById('fichier-preuve');
+        const btn = document.getElementById('btn-envoyer');
         const errorMsg = document.getElementById('erreur-msg');
 
-        // 1. Récupération des données
-        const dataJSON = sessionStorage.getItem('transaction_vente');
+        input.addEventListener('change', () => {
+            if (input.files[0]) {
+                document.getElementById('texte-depot').textContent = "Fichier : " + input.files[0].name;
+                document.getElementById('zone-depot').classList.add('border-amber-500');
+            }
+        });
 
-        if (!dataJSON) {
-            // CAS D'ERREUR : Pas de données -> On affiche l'écran d'erreur
-            console.error("Aucune donnée transaction_vente trouvée !");
-            formContainer.classList.add('hidden');
-            errorContainer.classList.remove('hidden');
-            return; // On arrête tout ici
-        }
+        btn.addEventListener('click', async () => {
+            const txid = document.getElementById('txid').value.trim();
+            if (!txid) {
+                errorMsg.textContent = "Le Hash (TxID) est obligatoire.";
+                errorMsg.classList.remove('hidden');
+                return;
+            }
 
-        // CAS SUCCÈS : Données trouvées -> On affiche le formulaire
-        try {
-            const transaction = JSON.parse(dataJSON);
-            console.log("✅ Transaction chargée :", transaction.id);
+            btn.disabled = true;
+            btn.textContent = "Envoi en cours...";
 
-            // Gestion du changement de nom de fichier
-            const input = document.getElementById('fichier-preuve');
-            input.addEventListener('change', () => {
-                if (input.files && input.files[0]) {
-                    document.getElementById('texte-depot').textContent = "Fichier sélectionné : " + input.files[0].name;
-                    document.getElementById('zone-depot').classList.add('border-amber-500', 'bg-amber-500/10');
-                    document.getElementById('erreur-msg').classList.add('hidden');
+            try {
+                let publicUrl = null;
+
+                // 1. Upload du fichier SI présent
+                if (input.files[0]) {
+                    const file = input.files[0];
+                    const fileName = `${transaction.id}-${Date.now()}.jpg`;
+                    
+                    const { data: uploadData, error: uploadError } = await supabase.storage
+                        .from('preuves')
+                        .upload(fileName, file);
+
+                    if (uploadError) throw uploadError;
+
+                    const { data: urlData } = supabase.storage.from('preuves').getPublicUrl(fileName);
+                    publicUrl = urlData.publicUrl;
                 }
-            });
 
-            // Gestion du bouton Envoyer
-            document.getElementById('btn-envoyer').addEventListener('click', async () => {
-                const btn = document.getElementById('btn-envoyer');
-                const txidInput = document.getElementById('txid').value.trim();
-                
-                if (!txidInput) {
-                    errorMsg.textContent = "Veuillez entrer le Hash (TxID) de la transaction.";
-                    errorMsg.classList.remove('hidden');
-                    return;
-                }
+                // 2. Mettre à jour la transaction (TxID + URL image)
+                const updateData = { hash_transaction: txid };
+                if (publicUrl) updateData.preuve_url = publicUrl;
 
-                // Simulation d'envoi
-                btn.disabled = true;
-                btn.textContent = "Envoi en cours...";
+                const { error: updateError } = await supabase
+                    .from('transactions')
+                    .update(updateData)
+                    .eq('id', transaction.id);
 
-                // ICI : Tu devras ajouter ton code pour envoyer le fichier à Supabase plus tard
-                setTimeout(() => {
-                    console.log("Preuve envoyée avec succès (Simulation)");
-                    window.location.href = '/vente-step4.html';
-                }, 1500);
-            });
+                if (updateError) throw updateError;
 
-        } catch (e) {
-            console.error("Erreur lecture JSON:", e);
-            formContainer.classList.add('hidden');
-            errorContainer.classList.remove('hidden');
-        }
+                window.location.href = '/vente-step4.html';
+
+            } catch (e) {
+                console.error(e);
+                errorMsg.textContent = "Erreur : " + e.message;
+                errorMsg.classList.remove('hidden');
+                btn.disabled = false;
+                btn.textContent = "Envoyer la preuve";
+            }
+        });
     });
   </script>
 </body>
