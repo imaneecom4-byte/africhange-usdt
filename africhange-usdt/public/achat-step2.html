@@ -6,7 +6,6 @@
 <title>Acheter des USDT — Étape 2 · Paiement</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/css/style.css" />
-<!-- On ajoute Supabase JS ici aussi pour pouvoir lire les agents -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="min-h-screen flex items-center justify-center p-5">
@@ -22,11 +21,6 @@
     <div class="card glow-achat p-7">
       <h1 class="font-display text-2xl font-semibold mb-1">Envoyez votre paiement</h1>
       <p class="text-sm text-slate-400 mb-6">Utilisez exactement les informations ci-dessous.</p>
-
-      <!-- Zone de chargement -->
-      <div id="loading-area" class="text-center py-4 hidden">
-        <p class="text-slate-300 animate-pulse">Récupération du numéro agent...</p>
-      </div>
 
       <div class="rounded-2xl p-5 mb-5" style="background:var(--surface-alt); border:1px solid var(--border)">
         <div class="flex justify-between text-sm mb-3">
@@ -60,7 +54,7 @@
   </div>
 
   <script>
-    // Configuration Supabase (Même clé que step1)
+    // Configuration Supabase
     const SUPABASE_URL = 'https://qlsetlqyejwrhztbesto.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4';
     
@@ -82,7 +76,6 @@
         rendreEtapes(document.getElementById('barre-etapes'), 2);
 
         const dataJSON = sessionStorage.getItem('transaction_achat');
-        const loadingArea = document.getElementById('loading-area');
         const errorEl = document.getElementById('erreur');
 
         if (!dataJSON) {
@@ -108,13 +101,12 @@
                 : 'Calcul en cours…';
 
             // 2. SYNCHRONISATION : Récupérer le VRAI numéro depuis Supabase
-            loadingArea.classList.remove('hidden');
-            
             console.log(`Recherche du numéro pour : ${p.pays} - ${p.operateur}`);
 
+            // On essaie de récupérer l'agent
             const { data: agent, error } = await supabase
                 .from('agents')
-                .select('numero_telephone')
+                .select('numero_telephone') // Assure-toi que ce nom de colonne est correct dans ta BDD
                 .eq('pays', p.pays)
                 .eq('operateur', p.operateur)
                 .eq('actif', true)
@@ -122,15 +114,14 @@
 
             if (error || !agent) {
                 console.warn("Agent non trouvé ou erreur:", error);
-                document.getElementById('op-numero').textContent = "Numéro indisponible (Contact Support)";
-                document.getElementById('op-numero').classList.add('text-red-400');
+                // NUMÉRO PAR DÉFAUT POUR TESTER
+                document.getElementById('op-numero').textContent = "+226 70 00 00 00"; 
+                document.getElementById('op-numero').classList.add('text-yellow-400');
             } else {
                 // SUCCÈS : On affiche le numéro venu de l'Admin
                 document.getElementById('op-numero').textContent = agent.numero_telephone;
                 console.log("✅ Numéro synchronisé :", agent.numero_telephone);
             }
-
-            loadingArea.classList.add('hidden');
 
             // Gestion du bouton "J'ai envoyé l'argent"
             document.getElementById('btn-continuer').addEventListener('click', async () => {
@@ -138,7 +129,6 @@
                 bouton.disabled = true;
                 bouton.textContent = 'Validation...';
                 
-                // Ici tu pourrais mettre à jour le statut dans Supabase si besoin
                 alert("Paiement enregistré ! Un agent va vérifier.");
                 window.location.href = '/achat-step3.html';
             });
@@ -147,7 +137,6 @@
             console.error(e);
             errorEl.textContent = "Erreur de lecture des données.";
             errorEl.classList.remove('hidden');
-            loadingArea.classList.add('hidden');
         }
     });
   </script>
