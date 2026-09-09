@@ -34,8 +34,10 @@
         <p class="text-slate-400">Indiquez où vous souhaitez recevoir vos francs CFA.</p>
       </div>
 
-      <!-- ZONE D'ERREUR -->
-      <div id="global-error" class="hidden bg-red-900/50 border border-red-500 text-red-200 p-4 rounded-lg mb-6"></div>
+      <!-- ZONE D'ALERTE SI ÇA PLANTE -->
+      <div id="global-error" class="hidden bg-red-900/50 border border-red-500 text-red-200 p-4 rounded-lg mb-6">
+        <strong>⚠️ Erreur système :</strong> <span id="error-msg"></span>
+      </div>
 
       <form id="form-vente-step1" class="space-y-6">
         
@@ -54,12 +56,12 @@
         <!-- Pays (Déclencheur des indicateurs) -->
         <div>
           <label class="block text-sm font-medium text-slate-300 mb-2">Pays</label>
-          <select id="pays" class="champ bg-slate-900 border-slate-600 text-white" required onchange="updatePhonePrefix()">
+          <select id="pays" class="champ bg-slate-900 border-slate-600 text-white" required onchange="handleCountryChange()">
             <option value="">Sélectionnez votre pays</option>
             <option value="Burkina Faso" data-prefix="+226">🇧🇫 Burkina Faso (+226)</option>
-            <option value="Côte d'Ivoire" data-prefix="+225">🇨🇮 Côte d'Ivoire (+225)</option>
-            <option value="Bénin" data-prefix="+229">🇯🇯 Bénin (+229)</option>
-            <option value="Togo" data-prefix="+228">🇹🇬 Togo (+228)</option>
+            <option value="Côte d'Ivoire" data-prefix="+225">🇨 Côte d'Ivoire (+225)</option>
+            <option value="Bénin" data-prefix="+229">🇯 Bénin (+229)</option>
+            <option value="Togo" data-prefix="+228">🇬 Togo (+228)</option>
           </select>
         </div>
 
@@ -84,10 +86,12 @@
           <p id="phone-mismatch-msg" class="text-xs text-red-400 mt-1 hidden">✗ Les numéros ne correspondent pas</p>
         </div>
 
-        <!-- Opérateurs -->
+        <!-- Opérateurs (Affichés dynamiquement avec VRAIS LOGOS) -->
         <div id="operateurs-container" class="hidden">
           <label class="block text-sm font-medium text-slate-300 mb-3">Réseau mobile</label>
-          <div id="liste-operateurs" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+          <div id="liste-operateurs" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <!-- Injecté par JS avec vrais logos -->
+          </div>
           <input type="hidden" id="operateur-selectionne" required />
         </div>
 
@@ -95,7 +99,7 @@
         <div>
           <label class="block text-sm font-medium text-slate-300 mb-2">Montant à vendre (USDT)</label>
           <input type="number" step="0.01" id="montant-usdt" class="champ bg-slate-900 border-slate-600 text-white placeholder-slate-500" placeholder="Ex : 30" min="1" required />
-          <p id="taux-info" class="text-sm text-slate-400 mt-2">Taux de vente : <span id="taux-valeur" class="font-bold text-amber-400">...</span></p>
+          <p id="taux-info" class="text-sm text-slate-400 mt-2">Taux de vente : <span id="taux-valeur" class="font-bold text-amber-400">Chargement...</span></p>
           <p id="montant-fcfa" class="text-lg font-bold text-amber-400 mt-1"></p>
         </div>
 
@@ -114,7 +118,7 @@
     const SUPABASE_URL = 'https://qlsetlqyejwrhztbesto.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4';
     
-    let supabase;
+    let supabaseClient; // Renommé pour éviter le conflit
     let configData = null;
     let agentsData = [];
     let currentPrefix = "";
@@ -131,27 +135,47 @@
 
     function initApp() {
       try {
-        if (typeof window.supabase === 'undefined') throw new Error("Supabase non chargé.");
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        if (typeof window.supabase === 'undefined') {
+          console.error("❌ Supabase library not loaded");
+          document.getElementById('taux-valeur').textContent = "Erreur de chargement";
+          return;
+        }
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log("✅ Client Supabase initialisé (Vente)");
         chargerDonnees();
       } catch (err) {
-        afficherErreur(err.message);
+        console.error("❌ Erreur init:", err);
+        document.getElementById('taux-valeur').textContent = "Erreur de connexion";
       }
     }
 
     async function chargerDonnees() {
       try {
-        const { data: cfg, error: errCfg } = await supabase.from('config').select('*').limit(1).single();
-        if (errCfg) throw new Error("Impossible de charger les taux.");
+        // 1. Charger Config (Taux)
+        console.log(" Chargement config...");
+        const { data: cfg, error: errCfg } = await supabaseClient.from('config').select('*').limit(1).single();
+        if (errCfg) {
+            console.error("Erreur config:", errCfg);
+            document.getElementById('taux-valeur').textContent = "Erreur taux";
+            return;
+        }
         configData = cfg;
         document.getElementById('taux-valeur').textContent = `${configData.taux_vente_client} FCFA/USDT`;
+        console.log("✅ Config chargée:", configData.taux_vente_client);
 
-        const { data: agt, error: errAgt } = await supabase.from('agents').select('*').eq('actif', true);
-        if (errAgt) throw new Error("Impossible de charger les opérateurs.");
+        // 2. Charger Agents (Opérateurs)
+        console.log(" Chargement agents...");
+        const { data: agt, error: errAgt } = await supabaseClient.from('agents').select('*').eq('actif', true);
+        if (errAgt) {
+            console.error("Erreur agents:", errAgt);
+            return;
+        }
         agentsData = agt || [];
+        console.log("✅ Agents chargés:", agentsData.length);
+
       } catch (err) {
-        console.error(err);
-        afficherErreur(err.message);
+        console.error(" Erreur globale chargement:", err);
+        document.getElementById('taux-valeur').textContent = "Erreur système";
       }
     }
 
@@ -162,7 +186,7 @@
     }
 
     // --- GESTION DU PAYS ET INDICATEURS ---
-    function updatePhonePrefix() {
+    function handleCountryChange() {
       const select = document.getElementById('pays');
       const option = select.options[select.selectedIndex];
       const prefix = option.getAttribute('data-prefix') || "";
@@ -174,20 +198,61 @@
       if (prefix) {
         inputs.forEach(id => {
           const el = document.getElementById(id);
-          el.disabled = false;
+          el.disabled = false; // Activation du champ
           el.placeholder = prefix + " XX XX XX XX";
+          el.focus(); // Mettre le focus automatiquement
         });
         badges.forEach(id => {
           const el = document.getElementById(id);
           el.textContent = prefix;
           el.classList.remove('hidden');
         });
+        
+        // Afficher les opérateurs après un court délai
+        setTimeout(() => {
+          showOperatorsForCountry(select.value);
+        }, 100);
       } else {
-        inputs.forEach(id => document.getElementById(id).disabled = true);
+        inputs.forEach(id => {
+          const el = document.getElementById(id);
+          el.disabled = true;
+          el.value = '';
+        });
         badges.forEach(id => document.getElementById(id).classList.add('hidden'));
+        document.getElementById('operateurs-container').classList.add('hidden');
       }
       
       validateForm();
+    }
+
+    function showOperatorsForCountry(pays) {
+      if (!pays) return;
+      
+      const container = document.getElementById('operateurs-container');
+      const liste = document.getElementById('liste-operateurs');
+      
+      const agentsPays = agentsData.filter(a => a.pays === pays);
+      
+      if (agentsPays.length === 0) {
+        liste.innerHTML = '<p class="text-slate-400 col-span-full text-center">Aucun opérateur disponible pour ce pays.</p>';
+        container.classList.remove('hidden');
+        return;
+      }
+
+      // Affichage avec VRAIS LOGOS SVG
+      liste.innerHTML = agentsPays.map(agent => {
+        const logoSVG = operatorLogos[agent.operateur] || operatorLogos['Orange Money'];
+        return `
+          <div class="operator-card bg-slate-900 border border-slate-700 rounded-xl p-3 cursor-pointer hover:border-amber-500 transition text-center" 
+               onclick="selectionnerOperateur('${agent.operateur}', this)">
+            <div class="flex flex-col items-center">
+              <div class="mb-2 bg-white rounded-lg p-1.5 shadow-md">${logoSVG}</div>
+              <p class="font-medium text-white text-xs">${agent.operateur}</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+      container.classList.remove('hidden');
     }
 
     // --- VALIDATION EN TEMPS RÉEL ---
@@ -240,38 +305,6 @@
       validateForm();
     });
 
-    // --- GESTION OPÉRATEURS ---
-    document.getElementById('pays').addEventListener('change', function() {
-      updatePhonePrefix();
-      const pays = this.value;
-      const container = document.getElementById('operateurs-container');
-      const liste = document.getElementById('liste-operateurs');
-      
-      if (!pays) { container.classList.add('hidden'); return; }
-
-      const agentsPays = agentsData.filter(a => a.pays === pays);
-      if (agentsPays.length === 0) {
-        liste.innerHTML = '<p class="text-slate-400 col-span-full text-center">Aucun opérateur disponible.</p>';
-        container.classList.remove('hidden');
-        return;
-      }
-
-      liste.innerHTML = agentsPays.map(agent => {
-        const logoSVG = operatorLogos[agent.operateur] || operatorLogos['Orange Money'];
-        return `
-          <div class="operator-card bg-slate-900 border border-slate-700 rounded-xl p-3 cursor-pointer hover:border-amber-500 transition text-center" 
-               onclick="selectionnerOperateur('${agent.operateur}', this)">
-            <div class="flex flex-col items-center">
-              <div class="mb-2 bg-white rounded-lg p-1.5 shadow-md">${logoSVG}</div>
-              <p class="font-medium text-white text-xs">${agent.operateur}</p>
-            </div>
-          </div>
-        `;
-      }).join('');
-      container.classList.remove('hidden');
-      validateForm();
-    });
-
     function selectionnerOperateur(op, el) {
       document.querySelectorAll('.operator-card').forEach(c => {
         c.classList.remove('border-amber-500', 'bg-slate-800');
@@ -316,7 +349,7 @@
       formData.montant_fcfa = formData.montant_usdt * formData.taux_applique;
 
       try {
-        const { data, error } = await supabase.from('transactions').insert([formData]).select().single();
+        const { data, error } = await supabaseClient.from('transactions').insert([formData]).select().single();
         if (error) throw error;
         sessionStorage.setItem('transaction_vente', JSON.stringify(data));
         window.location.href = '/vente-step2.html';
@@ -329,7 +362,8 @@
       }
     });
 
-    initApp();
+    // Initialisation au chargement de la page
+    window.addEventListener('DOMContentLoaded', initApp);
   </script>
 </body>
 </html>
