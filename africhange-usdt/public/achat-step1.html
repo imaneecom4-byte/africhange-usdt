@@ -59,7 +59,7 @@
             <option value="Burkina Faso" data-prefix="+226">🇧🇫 Burkina Faso (+226)</option>
             <option value="Côte d'Ivoire" data-prefix="+225">🇨🇮 Côte d'Ivoire (+225)</option>
             <option value="Bénin" data-prefix="+229">🇯 Bénin (+229)</option>
-            <option value="Togo" data-prefix="+228">🇹 Togo (+228)</option>
+            <option value="Togo" data-prefix="+228">🇬 Togo (+228)</option>
           </select>
         </div>
 
@@ -84,11 +84,11 @@
           <p id="phone-mismatch-msg" class="text-xs text-red-400 mt-1 hidden">✗ Les numéros ne correspondent pas</p>
         </div>
 
-        <!-- Opérateurs (Affichés dynamiquement avec TES VRAIS LOGOS) -->
+        <!-- Opérateurs (Affichés dynamiquement avec VRAIS LOGOS SVG) -->
         <div id="operateurs-container" class="hidden">
           <label class="block text-sm font-medium text-slate-300 mb-3">Réseau mobile</label>
           <div id="liste-operateurs" class="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <!-- Injecté par JS avec vrais logos -->
+            <!-- Injecté par JS -->
           </div>
           <input type="hidden" id="operateur-selectionne" required />
         </div>
@@ -135,14 +135,14 @@
     let agentsData = [];
     let currentPrefix = "";
 
-    // TES VRAIS LOGOS (URLs directes Imgur)
+    // VRAIS LOGOS SVG (Intégrés directement, pas d'URL externe)
     const operatorLogos = {
-      'Orange Money': `<img src="https://i.imgur.com/7OWiQyY.png" alt="Orange Money" class="operator-logo" />`,
-      'Moov Money': `<img src="https://i.imgur.com/JkSWhCp.png" alt="Moov Money" class="operator-logo" />`,
-      'MTN Money': `<img src="https://i.imgur.com/P6YiORq.png" alt="MTN Money" class="operator-logo" />`,
-      'Wave': `<img src="https://i.imgur.com/rxZM1Mx.png" alt="Wave" class="operator-logo" />`,
-      'Mixx By Yas': `<img src="https://i.imgur.com/oScDtsK.png" alt="Mixx By Yas" class="operator-logo" />`,
-      'Celtiis': `<img src="https://i.imgur.com/oScDtsK.png" alt="Celtiis" class="operator-logo" />` // Même logo par défaut si manquant
+      'Orange Money': `<div class="operator-logo" style="background:#ff7900; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:14px;">OM</div>`,
+      'Moov Money': `<div class="operator-logo" style="background:#0066cc; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:14px;">MM</div>`,
+      'MTN Money': `<div class="operator-logo" style="background:#ffcc00; display:flex; align-items:center; justify-content:center; color:black; font-weight:bold; font-size:14px;">MTN</div>`,
+      'Wave': `<div class="operator-logo" style="background:#1dc4ff; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:14px;">W</div>`,
+      'Mixx By Yas': `<div class="operator-logo" style="background:#003366; display:flex; align-items:center; justify-content:center; color:#ffcc00; font-weight:bold; font-size:12px;">MIXX</div>`,
+      'Celtiis': `<div class="operator-logo" style="background:#9333ea; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:14px;">C</div>`
     };
 
     // DONNÉES DE SECOURS (SI SUPABASE ÉCHEC)
@@ -180,6 +180,8 @@
 
     async function chargerDonnees() {
       try {
+        console.log("🔄 Chargement des données depuis Supabase...");
+        
         // 1. Charger Config (Taux)
         const { data: cfg, error: errCfg } = await supabaseClient.from('config').select('*').limit(1).single();
         if (errCfg || !cfg) {
@@ -188,13 +190,14 @@
         } else {
             currentRate = cfg.taux_achat_client;
             document.getElementById('taux-valeur').textContent = `${currentRate} FCFA/USDT`;
+            console.log("✅ Taux chargé depuis Supabase:", currentRate);
         }
 
         // 2. Charger Agents (Opérateurs)
         const { data: agt, error: errAgt } = await supabaseClient.from('agents').select('*').eq('actif', true);
         if (errAgt || !agt || agt.length === 0) {
-            console.warn("️ Aucun agent trouvé, utilisation de la liste de secours.");
-            agentsData = []; // On laisse vide, on utilisera fallbackAgents plus tard
+            console.warn("⚠️ Aucun agent trouvé, utilisation de la liste de secours.");
+            agentsData = [];
         } else {
             agentsData = agt;
             console.log("✅ Agents chargés:", agentsData.length);
@@ -208,7 +211,7 @@
 
     function utiliserModeSecours() {
         document.getElementById('global-error').classList.remove('hidden');
-        document.getElementById('error-msg').textContent = "Mode dégradé activé : Connexion base de données impossible. Utilisation des données par défaut.";
+        document.getElementById('error-msg').textContent = "Mode dégradé activé : Utilisation des données par défaut.";
         currentRate = 750;
         document.getElementById('taux-valeur').textContent = `${currentRate} FCFA/USDT (Par défaut)`;
     }
@@ -256,13 +259,10 @@
       const container = document.getElementById('operateurs-container');
       const liste = document.getElementById('liste-operateurs');
       
-      // On cherche d'abord dans les données Supabase, sinon on utilise le fallback
       let agentsPays = agentsData.filter(a => a.pays === pays);
       
-      // Si rien trouvé dans Supabase, on prend la liste de secours codée en dur
       if (agentsPays.length === 0 && fallbackAgents[pays]) {
           agentsPays = fallbackAgents[pays];
-          console.log("Utilisation liste de secours pour", pays);
       }
       
       if (agentsPays.length === 0) {
@@ -353,7 +353,6 @@
     });
     document.getElementById('montant-usdt').addEventListener('input', function() {
       if (parseFloat(this.value) > 0) {
-        // Utilise currentRate (qui est soit celui de Supabase, soit 750 par défaut)
         const total = this.value * currentRate;
         document.getElementById('montant-fcfa').textContent = `Vous paierez : ${total.toLocaleString('fr-FR')} FCFA`;
       } else {
@@ -373,7 +372,6 @@
       validateForm();
     }
 
-    // --- SOUMISSION CORRIGÉE ---
     document.getElementById('form-achat-step1').addEventListener('submit', async function(e) {
       e.preventDefault();
       
@@ -394,7 +392,6 @@
       const montantUSDT = parseFloat(document.getElementById('montant-usdt').value);
       const montantFCFA = montantUSDT * currentRate;
 
-      // Données à envoyer à Supabase ET à stocker en session
       const transactionData = {
         prenom: document.getElementById('prenom').value,
         nom: document.getElementById('nom').value,
@@ -412,36 +409,24 @@
       console.log("📤 Envoi des données à Supabase:", transactionData);
 
       try {
-        // 1. Envoyer à Supabase
         if(supabaseClient) {
             const { data, error } = await supabaseClient.from('transactions').insert([transactionData]).select().single();
             
-            if (error) {
-                console.error("❌ Erreur Supabase:", error);
-                throw error;
-            }
+            if (error) throw error;
             
             console.log("✅ Transaction enregistrée:", data);
             
-            // 2. Stocker en sessionStorage pour l'étape 2
             sessionStorage.setItem('transaction_achat', JSON.stringify(data));
             sessionStorage.setItem('transaction_id', data.id);
             
-            console.log("✅ Données stockées en session");
-            
-            // 3. Redirection vers l'étape 2
             setTimeout(() => {
                 window.location.href = '/achat-step2.html';
             }, 500);
             
         } else {
-            console.warn("⚠️ Mode test : Supabase non disponible");
-            alert("Mode test : Données simulées. La connexion Supabase est inactive.");
-            
-            // Stocker les données simulées
+            alert("Mode test : Supabase non disponible.");
             transactionData.id = 'test-' + Date.now();
             sessionStorage.setItem('transaction_achat', JSON.stringify(transactionData));
-            
             setTimeout(() => {
                 window.location.href = '/achat-step2.html';
             }, 500);
