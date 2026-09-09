@@ -39,7 +39,8 @@
     const SUPABASE_URL = 'https://qlsetlqyejwrhztbesto.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4';
     
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // CORRECTION ICI : On utilise une autre variable pour éviter le conflit "already declared"
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // Fonction utilitaire pour les étapes
     function rendreEtapes(container, currentStep) {
@@ -52,7 +53,7 @@
         }
     }
 
-    // Initialisation - VERSION CORRIGÉE SANS exigerParcours
+    // Initialisation
     document.addEventListener('DOMContentLoaded', () => {
         rendreEtapes(document.getElementById('barre-etapes'), 4);
 
@@ -61,11 +62,8 @@
         const rejeteEl = document.getElementById('statut-rejete');
 
         if (!dataJSON) {
-            // Si pas de données, on affiche une erreur
             erreurEl.textContent = "Aucune transaction trouvée. Veuillez recommencer.";
             erreurEl.classList.remove('hidden');
-            
-            // Redirection automatique après 3 secondes si échec
             setTimeout(() => {
                 window.location.href = '/vente-step1.html';
             }, 3000);
@@ -74,14 +72,14 @@
 
         try {
             const p = JSON.parse(dataJSON);
-            const transactionId = p.id; // On récupère l'ID de la transaction
+            const transactionId = p.id;
             
             console.log("Vérification du statut pour la transaction:", transactionId);
 
-            // Fonction pour vérifier le statut
             async function verifierStatut() {
                 try {
-                    const { data, error } = await supabase
+                    // CORRECTION ICI : On utilise supabaseClient au lieu de supabase
+                    const { data, error } = await supabaseClient
                         .from('transactions')
                         .select('statut')
                         .eq('id', transactionId)
@@ -95,11 +93,10 @@
                     if (data) {
                         console.log("Statut actuel:", data.statut);
                         
-                        if (data.statut === 'validée') { // Note: orthographe avec accent selon ta BDD
+                        if (data.statut === 'validée') {
                             window.location.href = '/vente-step5.html';
                         } else if (data.statut === 'rejete' || data.statut === 'échouée') {
                             rejeteEl.classList.remove('hidden');
-                            // On arrête de vérifier si c'est rejeté
                             clearInterval(intervalleVerification);
                         }
                     }
