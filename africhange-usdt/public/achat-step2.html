@@ -28,7 +28,6 @@
         </div>
         <div class="flex justify-between text-sm">
           <span class="text-slate-400">Numéro à créditer</span>
-          <!-- C'est ici que le vrai numéro s'affichera -->
           <span id="op-numero" class="font-medium font-display text-emerald-400">Recherche...</span>
         </div>
         <div class="flex justify-between text-sm">
@@ -48,74 +47,116 @@
       </ol>
 
       <p id="erreur" class="text-sm text-rose-400 hidden mb-3 text-center"></p>
-      <button id="btn-continuer" class="btn btn-primary w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-bold shadow-lg">J'ai envoyé l'argent</button>
+      <button id="btn-continuer" class="btn btn-primary w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-bold shadow-lg disabled:opacity-50">J'ai envoyé l'argent</button>
     </div>
   </div>
 
   <script>
     const SB_URL = 'https://qlsetlqyejwrhztbesto.supabase.co';
     const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4';
-    const sbClient = window.supabase.createClient(SB_URL, SB_KEY);
+
+    // Sécurité : si Supabase ne charge pas, message clair au lieu d'une page morte
+    let sbClient = null;
+    if (typeof window.supabase !== 'undefined') {
+      sbClient = window.supabase.createClient(SB_URL, SB_KEY);
+    }
+
+    // Fonction pour comparer sans majuscules / accents / espaces
+    function normaliser(texte) {
+      return (texte || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]/g, '');
+    }
 
     document.addEventListener('DOMContentLoaded', async () => {
-        // Rendu étapes
+        // Rendu des étapes
         const barre = document.getElementById('barre-etapes');
-        if(barre) {
+        if (barre) {
             barre.innerHTML = '';
-            for(let i=1; i<=5; i++) {
+            for (let i = 1; i <= 5; i++) {
                 const p = document.createElement('div');
                 p.className = `etape-point ${i < 2 ? 'faite' : ''} ${i === 2 ? 'active' : ''}`;
                 barre.appendChild(p);
             }
         }
 
-        const dataJSON = sessionStorage.getItem('transaction_achat');
         const errorEl = document.getElementById('erreur');
+        const btn = document.getElementById('btn-continuer');
+        const numeroEl = document.getElementById('op-numero');
 
+        // BOUTON branché TOUT DE SUITE (même si la recherche échoue plus bas)
+        btn.addEventListener('click', () => {
+            window.location.href = '/achat-step3.html';
+        });
+
+        const dataJSON = sessionStorage.getItem('transaction_achat');
         if (!dataJSON) {
-            errorEl.textContent = "Session expirée.";
+            errorEl.textContent = "Session expirée. Veuillez recommencer.";
             errorEl.classList.remove('hidden');
-            setTimeout(() => window.location.href = '/achat-step1.html', 2000);
+            btn.disabled = true;
+            setTimeout(() => window.location.href = '/achat-step1.html', 2500);
+            return;
+        }
+
+        let p;
+        try {
+            p = JSON.parse(dataJSON);
+        } catch (e) {
+            errorEl.textContent = "Données de session illisibles.";
+            errorEl.classList.remove('hidden');
+            btn.disabled = true;
+            return;
+        }
+
+        console.log('Données session achat :', p);
+
+        // Affichage des infos de base
+        document.getElementById('op-nom').textContent = p.operateur || '—';
+        document.getElementById('montant-usdt').textContent = (p.montant_usdt || 0) + ' USDT';
+        document.getElementById('montant-fcfa').textContent = (parseFloat(p.montant_fcfa) || 0).toLocaleString('fr-FR') + ' FCFA';
+
+        if (!sbClient) {
+            numeroEl.textContent = 'Erreur de connexion';
+            numeroEl.classList.replace('text-emerald-400', 'text-red-400');
+            errorEl.textContent = "Impossible de charger Supabase. Rechargez la page.";
+            errorEl.classList.remove('hidden');
             return;
         }
 
         try {
-            const p = JSON.parse(dataJSON);
-            
-            // Affichage infos de base
-            document.getElementById('op-nom').textContent = p.operateur;
-            document.getElementById('montant-usdt').textContent = `${p.montant_usdt} USDT`;
-            document.getElementById('montant-fcfa').textContent = `${p.montant_fcfa} FCFA`;
+            // On télécharge TOUS les agents (petite table) puis on compare en JS
+            const { data: agents, error } = await sbClient.from('agents').select('pays, operateur, numero');
+            if (error) throw error;
 
-            // --- RECHERCHE DU VRAI NUMÉRO DANS SUPABASE ---
-            console.log(`Recherche agent: ${p.pays} - ${p.operateur}`);
-            
-            const { data: agent, error } = await sbClient
-                .from('agents')
-                .select('numero')
-                .eq('pays', p.pays)
-                .eq('operateur', p.operateur)
-                .single();
+            const paysCible = normaliser(p.pays);
+            const operateurCible = normaliser(p.operateur);
+            console.log('Recherche agent :', paysCible, '/', operateurCible);
 
-            if (error || !agent) {
-                console.warn("Agent non trouvé, utilisation défaut");
-                document.getElementById('op-numero').textContent = "+226 00 00 00 00";
-                document.getElementById('op-numero').classList.add('text-red-400');
+            // Première correspondance exacte (pays + opérateur)
+            let match = (agents || []).find(a =>
+                normaliser(a.pays) === paysCible && normaliser(a.operateur) === operateurCible
+            );
+
+            if (match && match.numero) {
+                numeroEl.textContent = match.numero;
+                console.log('Numéro trouvé :', match.numero);
             } else {
-                // SUCCÈS : On affiche le vrai numéro
-                document.getElementById('op-numero').textContent = agent.numero;
-                console.log("Numéro trouvé:", agent.numero);
+                // Aucun agent configuré pour ce choix
+                numeroEl.textContent = 'Aucun agent disponible';
+                numeroEl.classList.replace('text-emerald-400', 'text-red-400');
+                errorEl.textContent = "Aucun agent n'est configuré pour ce pays / opérateur. Contactez le support ou choisissez un autre opérateur.";
+                errorEl.classList.remove('hidden');
+                btn.disabled = true;
             }
-
-            // Bouton suivant
-            document.getElementById('btn-continuer').addEventListener('click', () => {
-                window.location.href = '/achat-step3.html';
-            });
-
         } catch (e) {
             console.error(e);
-            errorEl.textContent = "Erreur de chargement.";
+            numeroEl.textContent = 'Erreur de recherche';
+            numeroEl.classList.replace('text-emerald-400', 'text-red-400');
+            errorEl.textContent = "Erreur lors de la recherche du numéro : " + e.message;
             errorEl.classList.remove('hidden');
+            btn.disabled = true;
         }
     });
   </script>
