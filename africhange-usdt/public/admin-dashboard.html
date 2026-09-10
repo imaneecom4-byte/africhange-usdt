@@ -1,295 +1,380 @@
-<script>
-    const SB_URL = 'https://qlsetlqyejwrhztbesto.supabase.co';
-    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4';
-    const sbClient = window.supabase.createClient(SB_URL, SB_KEY);
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AfriChange USDT — Admin Pro</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Outfit', sans-serif; background-color: #020617; color: #e2e8f0; }
+  .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+  .glass-card { background: linear-gradient(145deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%); border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+  .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+  #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+  .toast { background: rgba(15, 23, 42, 0.95); color: white; padding: 1rem 1.5rem; border-radius: 0.75rem; box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 0.75rem; min-width: 280px; border-left: 4px solid #10b981; animation: fadeIn 0.3s ease-out; }
+  .toast.error { border-left-color: #ef4444; }
+  .toast.warning { border-left-color: #f59e0b; }
+</style>
+</head>
+<body class="min-h-screen">
 
-    // --- NOTIFICATIONS ---
-    function demanderPermissionNotif() {
+  <div id="toast-container"></div>
+
+  <!-- Message d'erreur global si Supabase ne charge pas -->
+  <div id="erreur-globale" class="hidden fixed inset-0 z-[100] bg-slate-950 flex flex-col items-center justify-center text-center p-6">
+    <div class="text-5xl mb-4">📡</div>
+    <h2 class="text-xl font-bold text-white mb-2">Connexion impossible</h2>
+    <p class="text-slate-400 text-sm mb-6">La bibliothèque Supabase n'a pas pu être chargée.<br>Vérifie ta connexion internet puis recharge la page.</p>
+    <button onclick="location.reload()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-lg font-medium">Recharger</button>
+  </div>
+
+  <!-- Header -->
+  <nav class="fixed top-0 w-full z-50 glass-panel px-6 py-4 flex justify-between items-center">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-slate-900 font-bold text-xl">₮</div>
+      <div>
+        <h1 class="font-bold text-lg text-white">AfriChange <span class="text-emerald-400">Admin</span></h1>
+        <p class="text-xs text-slate-400">Gestion Centrale</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-4">
+      <button onclick="afficherNotifications()" class="relative p-2 rounded-full hover:bg-white/5">
+        <i class="ph ph-bell text-xl text-slate-300"></i>
+        <span id="badge-notif" class="hidden absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse"></span>
+      </button>
+      <button onclick="deconnexionAdmin()" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-red-500/10 hover:text-red-400 border border-slate-700 text-sm font-medium">
+        <i class="ph ph-sign-out"></i> Déconnexion
+      </button>
+    </div>
+  </nav>
+
+  <main class="pt-24 pb-10 px-6 max-w-7xl mx-auto space-y-8">
+
+    <!-- STATS -->
+    <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in">
+      <div class="glass-card p-6 rounded-2xl">
+        <p class="text-slate-400 text-sm">Bénéfice Total</p>
+        <h3 id="stat-benef" class="text-3xl font-bold text-white mt-1">— FCFA</h3>
+      </div>
+      <div class="glass-card p-6 rounded-2xl">
+        <p class="text-slate-400 text-sm">Transactions Validées</p>
+        <h3 id="stat-validees" class="text-3xl font-bold text-white mt-1">—</h3>
+      </div>
+      <div class="glass-card p-6 rounded-2xl">
+        <p class="text-slate-400 text-sm">Volume Acheté</p>
+        <h3 id="stat-achat" class="text-3xl font-bold text-white mt-1">— USDT</h3>
+      </div>
+      <div class="glass-card p-6 rounded-2xl">
+        <p class="text-slate-400 text-sm">Volume Vendu</p>
+        <h3 id="stat-vente" class="text-3xl font-bold text-white mt-1">— USDT</h3>
+      </div>
+    </section>
+
+    <div class="flex flex-col lg:flex-row gap-8">
+
+      <!-- TRANSACTIONS -->
+      <div class="lg:w-2/3 space-y-6">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-bold text-white flex items-center gap-2"><i class="ph ph-list-dashes text-emerald-400"></i> Transactions Récentes</h2>
+          <div class="flex gap-2">
+            <select id="filtre-statut" class="bg-slate-900 border border-slate-700 text-slate-300 text-sm rounded-lg px-3 py-2 outline-none">
+              <option value="">Tous les statuts</option>
+              <option value="en_attente">En attente</option>
+              <option value="valide">Validées</option>
+              <option value="rejete">Rejetées</option>
+            </select>
+            <button onclick="rafraichirTransactions()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg border border-slate-700"><i class="ph ph-arrows-clockwise"></i></button>
+          </div>
+        </div>
+
+        <div class="glass-panel rounded-2xl overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse min-w-[600px]">
+              <thead>
+                <tr class="bg-slate-900/50 text-slate-400 text-xs uppercase border-b border-slate-700">
+                  <th class="p-4">Client</th>
+                  <th class="p-4">Type</th>
+                  <th class="p-4">Montant</th>
+                  <th class="p-4">Statut</th>
+                  <th class="p-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="corps-tableau" class="divide-y divide-slate-800 text-sm">
+                <tr><td colspan="5" class="p-8 text-center text-slate-500">Chargement des données...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONFIG + AGENTS -->
+      <div class="lg:w-1/3 space-y-6">
+
+        <div class="glass-card p-6 rounded-2xl">
+          <h3 class="font-bold text-white mb-4 flex items-center gap-2"><i class="ph ph-sliders text-emerald-400"></i> Configuration</h3>
+          <form id="form-config" class="space-y-4">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs text-slate-400 block mb-1">Taux Achat</label>
+                <input type="number" id="cfg-taux-achat" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none" placeholder="750">
+              </div>
+              <div>
+                <label class="text-xs text-slate-400 block mb-1">Taux Vente</label>
+                <input type="number" id="cfg-taux-vente" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none" placeholder="730">
+              </div>
+            </div>
+            <div>
+              <label class="text-xs text-slate-400 block mb-1">Adresse USDT</label>
+              <input type="text" id="cfg-adresse" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-slate-300 outline-none" placeholder="0x...">
+            </div>
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2 rounded-lg">Sauvegarder</button>
+          </form>
+        </div>
+
+        <div class="glass-card p-6 rounded-2xl">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-white flex items-center gap-2"><i class="ph ph-users text-amber-400"></i> Agents Mobile Money</h3>
+            <button onclick="ajouterAgentPrompt()" class="text-xs bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg border border-slate-700 flex items-center gap-1">
+              <i class="ph ph-plus"></i> Ajouter
+            </button>
+          </div>
+          <div id="liste-agents-admin" class="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+            <div class="text-center text-slate-500 py-4">Chargement...</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- MODAL PREUVE -->
+  <div id="modale-preuve" class="hidden fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4" onclick="fermerModale()">
+    <div class="relative max-w-3xl w-full">
+      <button class="absolute top-4 right-4 text-white hover:text-red-400 text-3xl">&times;</button>
+      <img id="modale-image" src="" alt="Preuve" class="w-full h-auto rounded-xl border border-white/10" />
+    </div>
+  </div>
+
+  <script>
+    // ===== SÉCURITÉ : Vérifier que Supabase est bien chargé =====
+    if (typeof window.supabase === 'undefined') {
+      document.getElementById('erreur-globale').classList.remove('hidden');
+    } else {
+      demarrerApplication();
+    }
+
+    function demarrerApplication() {
+      const SB_URL = 'https://qlsetlqyejwrhztbesto.supabase.co';
+      const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4';
+      const sbClient = window.supabase.createClient(SB_URL, SB_KEY);
+
+      // --- NOTIFICATIONS CHROME ---
       if ("Notification" in window && Notification.permission === "default") {
         Notification.requestPermission();
       }
-    }
-    function envoyerNotification(titre, message) {
-      if ("Notification" in window && Notification.permission === "granted") {
-        try { new Notification(titre, { body: message }); } catch (e) { console.log(e); }
-      }
-    }
-    function showToast(message, type = 'info') {
-      // Simple alert pour être sûr que ça marche, ou console log
-      console.log("Toast:", message);
-      // Si tu veux un vrai toast visuel, on peut le rajouter, mais pour l'instant on débugue
-    }
-
-    // --- AUTH ---
-    async function verifierAuth() {
-      if (!sessionStorage.getItem('africhange_admin_session')) {
-        sessionStorage.setItem('africhange_admin_session', 'true');
-      }
-    }
-    verifierAuth();
-    demanderPermissionNotif();
-
-    // --- STATS ---
-    async function rafraichirStats() {
-      try {
-        // On ne sélectionne QUE les colonnes qui existent sûrement
-        const { data, error } = await sbClient.from('transactions').select('type_transaction, montant_usdt').eq('statut', 'valide');
-        if (error) throw error;
-        
-        const nb = data.length;
-        // Calcul simple sans benefice_estime pour éviter l'erreur si la colonne est vide/null
-        const achat = data.filter(t => t.type_transaction === 'achat').reduce((sum, t) => sum + (parseFloat(t.montant_usdt) || 0), 0);
-        const vente = data.filter(t => t.type_transaction === 'vente').reduce((sum, t) => sum + (parseFloat(t.montant_usdt) || 0), 0);
-        
-        document.getElementById('stat-benef').textContent = "— FCFA"; // On laisse vide pour l'instant
-        document.getElementById('stat-validees').textContent = nb;
-        document.getElementById('stat-achat').textContent = achat.toFixed(2) + ' USDT';
-        document.getElementById('stat-vente').textContent = vente.toFixed(2) + ' USDT';
-      } catch (e) { console.error("Erreur Stats:", e); }
-    }
-
-    // --- TRANSACTIONS ---
-    async function rafraichirTransactions() {
-      const corps = document.getElementById('corps-tableau');
-      if(!corps) return;
-      
-      try {
-        const statut = document.getElementById('filtre-statut').value;
-        let query = sbClient.from('transactions').select('*').order('created_at', { ascending: false }).limit(50);
-        if (statut) query = query.eq('statut', statut);
-        
-        const { data, error } = await query;
-        if (error) throw error;
-
-        if (!data || data.length === 0) {
-          corps.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-slate-500">Aucune transaction trouvée.</td></tr>';
-          return;
+      function notifier(titre, message) {
+        if ("Notification" in window && Notification.permission === "granted") {
+          try { new Notification(titre, { body: message }); } catch (e) { showToast(message, 'warning'); }
+        } else {
+          showToast(message, 'warning');
         }
+      }
+      function showToast(message, type = 'info') {
+        const t = document.createElement('div');
+        t.className = 'toast ' + (type || '');
+        t.innerHTML = '<span>' + message + '</span>';
+        document.getElementById('toast-container').appendChild(t);
+        setTimeout(() => t.remove(), 4000);
+      }
 
-        // Détection nouvelles transactions
-        const nbAttente = data.filter(t => t.statut === 'en_attente').length;
-        if (nbAttente > 0) {
-           // Logique de notif simplifiée
-        }
+      // --- STATS ---
+      async function rafraichirStats() {
+        try {
+          const { data, error } = await sbClient.from('transactions').select('type_transaction, montant_usdt').eq('statut', 'valide');
+          if (error) throw error;
+          const benef = data.reduce((s, t) => s + (parseFloat(t.benefice_estime) || 0), 0);
+          const achat = data.filter(t => t.type_transaction === 'achat').reduce((s, t) => s + (parseFloat(t.montant_usdt) || 0), 0);
+          const vente = data.filter(t => t.type_transaction === 'vente').reduce((s, t) => s + (parseFloat(t.montant_usdt) || 0), 0);
+          document.getElementById('stat-benef').textContent = benef.toLocaleString('fr-FR') + ' FCFA';
+          document.getElementById('stat-validees').textContent = data.length;
+          document.getElementById('stat-achat').textContent = achat.toFixed(2) + ' USDT';
+          document.getElementById('stat-vente').textContent = vente.toFixed(2) + ' USDT';
+        } catch (e) { console.error(e); }
+      }
 
-        corps.innerHTML = data.map(t => {
-          const nomClient = `${t.nom || ''} ${t.prenom || ''}`.trim() || 'Anonyme';
-          const telephone = t.numero_telephone || '-';
-          const typeTx = t.type_transaction || 'inconnu';
-          const montantUSDT = t.montant_usdt || 0;
-          const montantFCFA = t.montant_fcfa || 0;
-          const statutTx = t.statut || 'en_attente';
-          const preuveUrl = t.preuve_url || null;
-          
-          const isAchat = typeTx === 'achat';
-          const typeBadge = isAchat 
-            ? '<span class="px-2 py-1 rounded bg-cyan-500/10 text-cyan-400 text-xs font-bold border border-cyan-500/20">ACHAT</span>' 
-            : '<span class="px-2 py-1 rounded bg-amber-500/10 text-amber-400 text-xs font-bold border border-amber-500/20">VENTE</span>';
-          
-          let statusClass = 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
-          let statusLabel = 'En attente';
-          if (statutTx === 'valide' || statutTx === 'validée') { statusClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'; statusLabel = 'Validée'; }
-          else if (statutTx === 'rejete' || statutTx === 'rejetée') { statusClass = 'bg-red-500/10 text-red-400 border-red-500/20'; statusLabel = 'Rejetée'; }
+      // --- TRANSACTIONS ---
+      let dernierNbAttente = 0;
+      let premierChargement = true;
 
-          let actionsHtml = '<span class="text-xs text-slate-600 italic">Terminé</span>';
-          if (statutTx === 'en_attente') {
-              let btnPreuve = preuveUrl ? `<button onclick="ouvrirModale('${preuveUrl}')" class="p-2 rounded-lg bg-slate-700 hover:bg-blue-500 text-white transition" title="Voir Preuve"><i class="ph ph-eye"></i></button>` : '';
-              actionsHtml = `<div class="flex justify-end gap-2">
-                    <button onclick="validerTransaction('${t.id}')" class="p-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition shadow-lg shadow-emerald-900/20" title="Valider"><i class="ph ph-check"></i></button>
-                    <button onclick="rejeterTransaction('${t.id}')" class="p-2 rounded-lg bg-slate-700 hover:bg-red-500 text-white transition" title="Rejeter"><i class="ph ph-x"></i></button>
-                    ${btnPreuve}
-                  </div>`;
-          } else if (preuveUrl) {
-              actionsHtml = `<button onclick="ouvrirModale('${preuveUrl}')" class="p-2 rounded-lg bg-slate-700 hover:bg-blue-500 text-white transition" title="Voir Preuve"><i class="ph ph-eye"></i></button>`;
+      async function rafraichirTransactions() {
+        const corps = document.getElementById('corps-tableau');
+        try {
+          const statut = document.getElementById('filtre-statut').value;
+          let query = sbClient.from('transactions').select('*').order('created_at', { ascending: false }).limit(50);
+          if (statut) query = query.eq('statut', statut);
+          const { data, error } = await query;
+          if (error) throw error;
+
+          if (!data || data.length === 0) {
+            corps.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-slate-500">Aucune transaction.</td></tr>';
+            return;
           }
 
-          return `
-            <tr class="hover:bg-white/5 transition group">
-              <td class="p-4">
-                <div class="font-bold text-white">${nomClient}</div>
-                <div class="text-xs text-slate-400">${telephone}</div>
-              </td>
-              <td class="p-4">${typeBadge}</td>
-              <td class="p-4">
-                <div class="font-bold text-slate-200">${montantUSDT} USDT</div>
-                <div class="text-xs text-slate-500">${montantFCFA} FCFA</div>
-              </td>
-              <td class="p-4"><span class="status-badge ${statusClass} border">${statusLabel}</span></td>
-              <td class="p-4 text-right">${actionsHtml}</td>
-            </tr>
-          `;
-        }).join('');
-      } catch (e) {
-        console.error(e);
-        if(corps) corps.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-red-400">Erreur: ${e.message}</td></tr>`;
-      }
-    }
+          // Notification nouvelles transactions
+          const nb = data.filter(t => t.statut === 'en_attente').length;
+          if (!premierChargement && nb > dernierNbAttente) {
+            notifier('🔔 AfriChange', (nb - dernierNbAttente) + ' nouvelle(s) transaction(s) en attente !');
+          }
+          premierChargement = false;
+          dernierNbAttente = nb;
+          const badge = document.getElementById('badge-notif');
+          if (nb > 0) { badge.textContent = nb; badge.classList.remove('hidden'); } else { badge.classList.add('hidden'); }
 
-    // --- ACTIONS (CORRIGÉES POUR ÉVITER 400) ---
-    async function validerTransaction(id) { 
-      if(!confirm("Confirmer la validation ?")) return; 
-      try {
-        // On met à jour UNIQUEMENT le statut. Rien d'autre.
+          corps.innerHTML = data.map(t => {
+            const nom = ((t.nom || '') + ' ' + (t.prenom || '')).trim() || 'Anonyme';
+            const badgeType = t.type_transaction === 'achat'
+              ? '<span class="px-2 py-1 rounded bg-cyan-500/10 text-cyan-400 text-xs font-bold border border-cyan-500/20">ACHAT</span>'
+              : '<span class="px-2 py-1 rounded bg-amber-500/10 text-amber-400 text-xs font-bold border border-amber-500/20">VENTE</span>';
+            let statusClass = 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20', statusLabel = 'En attente';
+            if (t.statut === 'valide') { statusClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'; statusLabel = 'Validée'; }
+            if (t.statut === 'rejete') { statusClass = 'bg-red-500/10 text-red-400 border-red-500/20'; statusLabel = 'Rejetée'; }
+
+            let actions = '<span class="text-xs text-slate-600 italic">Terminé</span>';
+            if (t.statut === 'en_attente') {
+              actions = '<div class="flex justify-end gap-2">' +
+                '<button onclick="window.validerTransaction(\'' + t.id + '\')" class="p-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white" title="Valider"><i class="ph ph-check"></i></button>' +
+                '<button onclick="window.rejeterTransaction(\'' + t.id + '\')" class="p-2 rounded-lg bg-slate-700 hover:bg-red-500 text-white" title="Rejeter"><i class="ph ph-x"></i></button>' +
+                (t.preuve_url ? '<button onclick="window.ouvrirModale(\'' + t.preuve_url + '\')" class="p-2 rounded-lg bg-slate-700 hover:bg-blue-500 text-white" title="Voir preuve"><i class="ph ph-eye"></i></button>' : '') +
+                '</div>';
+            } else if (t.preuve_url) {
+              actions = '<button onclick="window.ouvrirModale(\'' + t.preuve_url + '\')" class="p-2 rounded-lg bg-slate-700 hover:bg-blue-500 text-white" title="Voir preuve"><i class="ph ph-eye"></i></button>';
+            }
+
+            return '<tr class="hover:bg-white/5">' +
+              '<td class="p-4"><div class="font-bold text-white">' + nom + '</div><div class="text-xs text-slate-400">' + (t.numero_telephone || '') + '</div></td>' +
+              '<td class="p-4">' + badgeType + '</td>' +
+              '<td class="p-4"><div class="font-bold">' + t.montant_usdt + ' USDT</div><div class="text-xs text-slate-500">' + (parseFloat(t.montant_fcfa) || 0).toLocaleString('fr-FR') + ' FCFA</div></td>' +
+              '<td class="p-4"><span class="status-badge border ' + statusClass + '">' + statusLabel + '</span></td>' +
+              '<td class="p-4 text-right">' + actions + '</td></tr>';
+          }).join('');
+        } catch (e) {
+          corps.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-red-400">Erreur : ' + e.message + '</td></tr>';
+        }
+      }
+
+      // --- ACTIONS (exposées en global pour les onclick) ---
+      window.validerTransaction = async function (id) {
+        if (!confirm('Confirmer la validation ?')) return;
         const { error } = await sbClient.from('transactions').update({ statut: 'valide' }).eq('id', id);
-        if(error) {
-            console.error("Erreur détaillée:", error);
-            alert("Erreur Supabase: " + error.message);
-            return;
-        }
-        alert("Transaction validée !");
-        rafraichirTransactions(); 
-        rafraichirStats(); 
-      } catch(e) { 
-          console.error(e);
-          alert("Erreur JS: " + e.message); 
-      }
-    }
-    
-    async function rejeterTransaction(id) { 
-      const m = prompt("Motif du rejet :"); 
-      if(m===null) return; 
-      try {
-        // On met à jour UNIQUEMENT le statut.
+        if (error) { alert('Erreur : ' + error.message); return; }
+        showToast('Transaction validée !');
+        rafraichirTransactions(); rafraichirStats();
+      };
+      window.rejeterTransaction = async function (id) {
+        const m = prompt('Motif du rejet :');
+        if (m === null) return;
         const { error } = await sbClient.from('transactions').update({ statut: 'rejete' }).eq('id', id);
-        if(error) {
-             console.error("Erreur détaillée:", error);
-             alert("Erreur Supabase: " + error.message);
-             return;
-        }
-        alert("Transaction rejetée.");
-        rafraichirTransactions(); 
-      } catch(e) { 
-          console.error(e);
-          alert("Erreur JS: " + e.message);
-      }
-    }
-    
-    function ouvrirModale(url) { 
-        const modal = document.getElementById('modale-preuve');
-        const img = document.getElementById('modale-image');
-        if(modal && img) {
-            img.src = url; 
-            modal.classList.remove('hidden'); 
-        }
-    }
-    function fermerModale() { 
-        const modal = document.getElementById('modale-preuve');
-        if(modal) {
-            modal.classList.add('hidden'); 
-            document.getElementById('modale-image').src = ""; 
-        }
-    }
-
-    // --- AGENTS (SIMPLIFIÉ) ---
-    async function chargerAgentsUI() {
-      try {
-        const container = document.getElementById('liste-agents-admin');
-        if(!container) return;
-        
-        const { data, error } = await sbClient.from('agents').select('*').order('pays');
-        if (error) throw error;
-        
-        if (!data || data.length === 0) { 
-            container.innerHTML = '<div class="text-center text-slate-500 text-sm py-4">Aucun agent configuré.</div>'; 
-            return; 
-        }
-        
-        container.innerHTML = data.map(a => `
-          <div class="bg-slate-950/50 border border-slate-800 p-3 rounded-xl flex flex-col gap-2 hover:border-emerald-500/30 transition group">
-            <div class="flex justify-between items-start">
-              <div>
-                <div class="text-xs font-bold text-emerald-400 uppercase tracking-wide">${a.pays}</div>
-                <div class="text-xs text-slate-400 font-medium">${a.operateur}</div>
-              </div>
-              <div class="flex gap-1">
-                <button onclick="modifierAgent('${a.id}', '${a.numero}')" class="text-slate-500 hover:text-blue-400 p-1" title="Modifier"><i class="ph ph-pencil"></i></button>
-                <button onclick="supprimerAgent('${a.id}')" class="text-slate-500 hover:text-red-400 p-1" title="Supprimer"><i class="ph ph-trash"></i></button>
-              </div>
-            </div>
-            <div class="flex gap-2 items-center">
-              <input type="text" value="${a.numero || ''}" class="flex-1 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white focus:border-emerald-500 outline-none" id="input-agent-${a.id}">
-              <button onclick="sauverAgent('${a.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-1 rounded font-medium transition">OK</button>
-            </div>
-          </div>
-        `).join('');
-      } catch (e) { console.error(e); }
-    }
-
-    async function modifierAgent(id, ancienNumero) {
-      const nouveau = prompt("Nouveau numéro :", ancienNumero);
-      if(nouveau && nouveau.trim() && nouveau !== ancienNumero) {
-        try {
-          const { error } = await sbClient.from('agents').update({ numero: nouveau.trim() }).eq('id', id);
-          if(error) throw error;
-          chargerAgentsUI();
-        } catch(e) { alert("Erreur: " + e.message); }
-      }
-    }
-
-    async function sauverAgent(id) { 
-      const input = document.getElementById(`input-agent-${id}`); 
-      if(!input) return;
-      try { 
-        const { error } = await sbClient.from('agents').update({ numero: input.value }).eq('id', id); 
-        if(error) throw error;
-        alert("Numéro mis à jour");
-      } catch (e) { alert("Erreur: " + e.message); } 
-    }
-
-    async function supprimerAgent(id) { 
-      if(!confirm("Supprimer cet agent ?")) return; 
-      try { 
-        const { error } = await sbClient.from('agents').delete().eq('id', id); 
-        if(error) throw error;
-        chargerAgentsUI(); 
-      } catch(e) { alert("Erreur suppression"); } 
-    }
-
-    async function ajouterAgentPrompt() {
-      const pays = prompt("Pays :");
-      if(!pays) return;
-      const op = prompt("Opérateur :");
-      if(!op) return;
-      const num = prompt("Numéro :");
-      if(!num) return;
-      try {
-        const { error } = await sbClient.from('agents').insert([{ pays, operateur: op, numero: num }]);
-        if(error) throw error;
-        chargerAgentsUI();
-      } catch(err) { alert("Erreur: " + err.message); }
-    }
-
-    // --- CONFIG FORM ---
-    const formConfig = document.getElementById('form-config');
-    if(formConfig) {
-        formConfig.addEventListener('submit', async (e) => { 
-          e.preventDefault(); 
-          try { 
-            const { error } = await sbClient.from('config').update({ 
-              taux_achat_client: parseFloat(document.getElementById('cfg-taux-achat').value), 
-              taux_vente_client: parseFloat(document.getElementById('cfg-taux-vente').value), 
-              adresse_usdt_reception: document.getElementById('cfg-adresse').value 
-            }).eq('id', 1); 
-            
-            if(error) throw error;
-            alert("Configuration sauvegardée !"); 
-          } catch(err) { alert("Erreur sauvegarde: " + err.message); } 
-        });
-    }
-
-    function deconnexionAdmin() {
-      sessionStorage.removeItem('africhange_admin_session');
-      window.location.href = '/admin-login.html';
-    }
-    
-    function afficherNotifications() {
+        if (error) { alert('Erreur : ' + error.message); return; }
+        showToast('Transaction rejetée.', 'error');
+        rafraichirTransactions();
+      };
+      window.ouvrirModale = function (url) {
+        document.getElementById('modale-image').src = url;
+        document.getElementById('modale-preuve').classList.remove('hidden');
+      };
+      window.fermerModale = function () {
+        document.getElementById('modale-preuve').classList.add('hidden');
+        document.getElementById('modale-image').src = '';
+      };
+      window.afficherNotifications = function () {
         document.getElementById('filtre-statut').value = 'en_attente';
         rafraichirTransactions();
-    }
+      };
+      window.deconnexionAdmin = function () {
+        sessionStorage.removeItem('africhange_admin_session');
+        window.location.href = '/admin-login.html';
+      };
 
-    // --- INIT ---
-    rafraichirStats();
-    rafraichirTransactions();
-    chargerAgentsUI();
-    setInterval(() => { rafraichirTransactions(); rafraichirStats(); }, 15000);
+      // --- AGENTS ---
+      async function chargerAgentsUI() {
+        try {
+          const { data, error } = await sbClient.from('agents').select('*').order('pays');
+          if (error) throw error;
+          const c = document.getElementById('liste-agents-admin');
+          if (!data || data.length === 0) { c.innerHTML = '<div class="text-center text-slate-500 text-sm py-4">Aucun agent.</div>'; return; }
+          c.innerHTML = data.map(a =>
+            '<div class="bg-slate-950/50 border border-slate-800 p-3 rounded-xl">' +
+            '<div class="flex justify-between items-start mb-2">' +
+            '<div><div class="text-xs font-bold text-emerald-400 uppercase">' + a.pays + '</div><div class="text-xs text-slate-400">' + a.operateur + '</div></div>' +
+            '<div class="flex gap-1">' +
+            '<button onclick="window.modifierAgent(\'' + a.id + '\', \'' + (a.numero || '') + '\')" class="text-slate-500 hover:text-blue-400 p-1"><i class="ph ph-pencil"></i></button>' +
+            '<button onclick="window.supprimerAgent(\'' + a.id + '\')" class="text-slate-500 hover:text-red-400 p-1"><i class="ph ph-trash"></i></button>' +
+            '</div></div>' +
+            '<div class="flex gap-2"><input type="text" value="' + (a.numero || '') + '" id="input-agent-' + a.id + '" class="flex-1 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white outline-none">' +
+            '<button onclick="window.sauverAgent(\'' + a.id + '\')" class="bg-emerald-600 text-white text-xs px-3 py-1 rounded">OK</button></div></div>'
+          ).join('');
+        } catch (e) { console.error(e); }
+      }
+      window.sauverAgent = async function (id) {
+        const v = document.getElementById('input-agent-' + id).value;
+        const { error } = await sbClient.from('agents').update({ numero: v }).eq('id', id);
+        if (error) { alert('Erreur : ' + error.message); return; }
+        showToast('Numéro mis à jour');
+      };
+      window.modifierAgent = async function (id, ancien) {
+        const nv = prompt('Nouveau numéro :', ancien);
+        if (!nv || nv === ancien) return;
+        const { error } = await sbClient.from('agents').update({ numero: nv }).eq('id', id);
+        if (error) { alert('Erreur : ' + error.message); return; }
+        chargerAgentsUI();
+      };
+      window.supprimerAgent = async function (id) {
+        if (!confirm('Supprimer cet agent ?')) return;
+        await sbClient.from('agents').delete().eq('id', id);
+        chargerAgentsUI();
+      };
+      window.ajouterAgentPrompt = async function () {
+        const pays = prompt('Pays :'); if (!pays) return;
+        const op = prompt('Opérateur :'); if (!op) return;
+        const num = prompt('Numéro :'); if (!num) return;
+        const { error } = await sbClient.from('agents').insert([{ pays: pays, operateur: op, numero: num }]);
+        if (error) { alert('Erreur : ' + error.message); return; }
+        chargerAgentsUI();
+      };
+
+      // --- CONFIG ---
+      document.getElementById('form-config').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const { error } = await sbClient.from('config').update({
+          taux_achat_client: parseFloat(document.getElementById('cfg-taux-achat').value),
+          taux_vente_client: parseFloat(document.getElementById('cfg-taux-vente').value),
+          adresse_usdt_reception: document.getElementById('cfg-adresse').value
+        }).eq('id', 1);
+        if (error) { alert('Erreur : ' + error.message); return; }
+        showToast('Configuration sauvegardée !');
+      });
+
+      // --- CHARGEMENT CONFIG + INIT ---
+      (async () => {
+        try {
+          const { data: cfg } = await sbClient.from('config').select('*').eq('id', 1).single();
+          if (cfg) {
+            document.getElementById('cfg-taux-achat').value = cfg.taux_achat_client;
+            document.getElementById('cfg-taux-vente').value = cfg.taux_vente_client;
+            document.getElementById('cfg-adresse').value = cfg.adresse_usdt_reception || '';
+          }
+        } catch (e) { console.error(e); }
+        rafraichirStats();
+        rafraichirTransactions();
+        chargerAgentsUI();
+        setInterval(() => { rafraichirTransactions(); rafraichirStats(); }, 15000);
+      })();
+    }
   </script>
+</body>
+</html>
