@@ -1,4 +1,4 @@
-const CACHE_NAME = 'africhange-v1';
+const CACHE_NAME = 'africhange-v2';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -35,11 +35,16 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  // UNIQUEMENT les requêtes GET de NOTRE propre site (http/https)
+  const url = new URL(event.request.url);
+  if (event.request.method !== 'GET' || !url.protocol.startsWith('http') || url.origin !== self.location.origin) {
+    return;
+  }
   event.respondWith(
     caches.match(event.request).then(response => {
       if (response) return response;
       return fetch(event.request).then(response => {
-        if (!response || response.status !== 200 || response.type !== 'basic') return response;
+        if (!response || response.status !== 200) return response;
         const responseToCache = response.clone();
         caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseToCache));
         return response;
