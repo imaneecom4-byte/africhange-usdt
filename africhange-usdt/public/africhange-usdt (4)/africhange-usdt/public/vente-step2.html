@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vendre des USDT — Étape 2 · Envoi des USDT</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="min-h-screen flex items-center justify-center p-5">
+
+  <div class="w-full max-w-md entree-ecran">
+    <div class="flex items-center justify-between mb-4">
+      <a href="/vente-step1.html" class="text-sm text-slate-400 hover:text-slate-200">&larr; Retour</a>
+      <span class="text-xs text-slate-500">Étape 2 sur 5</span>
+    </div>
+
+    <div class="etapes mb-6" id="barre-etapes"></div>
+
+    <div class="card glow-vente p-7">
+      <h1 class="font-display text-2xl font-semibold mb-1">Envoyez vos USDT</h1>
+      <p class="text-sm text-slate-400 mb-5">Scannez le QR code ou copiez l'adresse ci-dessous.</p>
+
+      <div class="flex flex-col items-center mb-5" id="zone-qrcode">
+        <div class="spinner"></div>
+      </div>
+
+      <div class="rounded-2xl p-4 mb-5 flex items-center justify-between gap-3" style="background:var(--surface-alt); border:1px solid var(--border)">
+        <span id="adresse-usdt" class="text-xs font-mono break-all">Chargement…</span>
+        <button id="btn-copier" class="text-xs px-3 py-1.5 rounded-lg" style="background:var(--surface); border:1px solid var(--border)">Copier</button>
+      </div>
+
+      <div class="flex justify-between text-sm mb-5">
+        <span class="text-slate-400">Montant à envoyer</span>
+        <span id="montant-usdt" class="font-medium font-display"></span>
+      </div>
+
+      <ol class="text-sm text-slate-400 space-y-2 list-decimal list-inside mb-6">
+        <li>Ouvrez votre wallet crypto (Trust Wallet, Binance, etc.).</li>
+        <li>Envoyez exactement le montant indiqué vers l'adresse ci-dessus, sur le bon réseau.</li>
+        <li>Conservez le hash (TxID) de la transaction pour l'étape suivante.</li>
+      </ol>
+
+      <p id="erreur" class="text-sm text-rose-400 hidden mb-3"></p>
+      <button id="btn-continuer" class="btn w-full" style="background:linear-gradient(135deg,#f5b942,#c98a1c); color:#1a1000;">J'ai envoyé mes USDT</button>
+    </div>
+  </div>
+
+  <script src="/js/main.js"></script>
+  <script src="/js/qrcode-generator.js"></script>
+  <script>
+    rendreEtapes(document.getElementById('barre-etapes'), 2);
+    const p = exigerParcours(['numero_reception', 'operateur_reception', 'montant_usdt'], '/vente-step1.html');
+
+    document.getElementById('montant-usdt').textContent = `${p.montant_usdt} USDT`;
+
+    afficherQrCodeUsdt('zone-qrcode', 'adresse-usdt');
+    document.getElementById('btn-copier').addEventListener('click', () => copierAdresse('adresse-usdt', 'btn-copier'));
+
+    document.getElementById('btn-continuer').addEventListener('click', async () => {
+      const bouton = document.getElementById('btn-continuer');
+      const erreurEl = document.getElementById('erreur');
+      erreurEl.classList.add('hidden');
+      bouton.disabled = true;
+      bouton.textContent = 'Enregistrement…';
+
+      try {
+        let transaction = p.transaction_id ? { id: p.transaction_id } : null;
+        if (!transaction) {
+          transaction = await creerTransaction(p);
+          ecrireParcours({ transaction_id: transaction.id });
+        }
+        window.location.href = '/vente-step3.html';
+      } catch (e) {
+        afficherErreur(erreurEl, e.message);
+        bouton.disabled = false;
+        bouton.textContent = "J'ai envoyé mes USDT";
+      }
+    });
+  </script>
+</body>
+</html>

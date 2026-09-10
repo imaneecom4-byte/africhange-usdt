@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Acheter des USDT — Étape 3 · Preuve de paiement</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="min-h-screen flex items-center justify-center p-5">
+
+  <div class="w-full max-w-md entree-ecran">
+    <div class="flex items-center justify-between mb-4">
+      <a href="/achat-step2.html" class="text-sm text-slate-400 hover:text-slate-200">&larr; Retour</a>
+      <span class="text-xs text-slate-500">Étape 3 sur 5</span>
+    </div>
+
+    <div class="etapes mb-6" id="barre-etapes"></div>
+
+    <div class="card glow-achat p-7">
+      <h1 class="font-display text-2xl font-semibold mb-1">Preuve de paiement</h1>
+      <p class="text-sm text-slate-400 mb-6">Ajoutez la capture d'écran de la confirmation Mobile Money.</p>
+
+      <label for="fichier-preuve" id="zone-depot" class="block border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition" style="border-color:var(--border)">
+        <div class="text-3xl mb-2">📎</div>
+        <p class="text-sm text-slate-300" id="texte-depot">Cliquez pour choisir une image</p>
+        <p class="text-xs text-slate-500 mt-1">PNG, JPG — 8 Mo maximum</p>
+        <input type="file" id="fichier-preuve" accept="image/*" class="hidden" />
+      </label>
+
+      <p id="erreur" class="text-sm text-rose-400 hidden mt-4"></p>
+      <button id="btn-envoyer" class="btn btn-primary w-full mt-6">Envoyer la preuve</button>
+    </div>
+  </div>
+
+  <script src="/js/main.js"></script>
+  <script>
+    rendreEtapes(document.getElementById('barre-etapes'), 3);
+    const p = exigerParcours(['transaction_id'], '/achat-step1.html');
+
+    const input = document.getElementById('fichier-preuve');
+    input.addEventListener('change', () => {
+      if (input.files[0]) {
+        document.getElementById('texte-depot').textContent = input.files[0].name;
+      }
+    });
+
+    document.getElementById('btn-envoyer').addEventListener('click', async () => {
+      const bouton = document.getElementById('btn-envoyer');
+      const erreurEl = document.getElementById('erreur');
+      erreurEl.classList.add('hidden');
+
+      if (!input.files[0]) {
+        return afficherErreur(erreurEl, "Veuillez sélectionner une image avant de continuer.");
+      }
+
+      bouton.disabled = true;
+      bouton.textContent = 'Envoi en cours…';
+      try {
+        await envoyerPreuve(p.transaction_id, { fichier: input.files[0] });
+        window.location.href = '/achat-step4.html';
+      } catch (e) {
+        afficherErreur(erreurEl, e.message);
+        bouton.disabled = false;
+        bouton.textContent = 'Envoyer la preuve';
+      }
+    });
+  </script>
+</body>
+</html>

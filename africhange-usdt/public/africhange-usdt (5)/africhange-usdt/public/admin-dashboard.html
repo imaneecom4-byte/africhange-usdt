@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AfriChange USDT — Tableau de bord</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="min-h-screen">
+
+  <!-- En-tête -->
+  <header class="border-b" style="border-color:var(--border)">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center font-display font-bold text-sm" style="background:#26a17b;color:#06120d;">₮</div>
+        <span class="font-display font-semibold">AfriChange <span style="color:#26a17b">Admin</span></span>
+      </div>
+      <button onclick="deconnexionAdmin()" class="text-sm text-slate-400 hover:text-slate-200">Se déconnecter</button>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-6 py-8">
+
+    <!-- Cartes de bénéfices -->
+    <div class="grid md:grid-cols-4 gap-4 mb-8">
+      <div class="card p-5">
+        <p class="text-xs text-slate-400 mb-1">Bénéfice total</p>
+        <p id="benef-total" class="font-display text-2xl font-semibold" style="color:#26a17b">—</p>
+      </div>
+      <div class="card p-5">
+        <p class="text-xs text-slate-400 mb-1">Transactions validées</p>
+        <p id="benef-nb" class="font-display text-2xl font-semibold">—</p>
+      </div>
+      <div class="card p-5">
+        <p class="text-xs text-slate-400 mb-1">Volume acheté</p>
+        <p id="benef-achat" class="font-display text-2xl font-semibold" style="color:#22d3ee">—</p>
+      </div>
+      <div class="card p-5">
+        <p class="text-xs text-slate-400 mb-1">Volume vendu</p>
+        <p id="benef-vente" class="font-display text-2xl font-semibold" style="color:#f5b942">—</p>
+      </div>
+    </div>
+
+    <!-- Onglets -->
+    <div class="flex gap-2 mb-6">
+      <button class="onglet-btn btn btn-outline" data-onglet="transactions">Transactions</button>
+      <button class="onglet-btn btn btn-outline" data-onglet="configuration">Configuration</button>
+    </div>
+
+    <!-- Onglet Transactions -->
+    <section id="onglet-transactions">
+      <div class="flex flex-wrap gap-3 mb-5">
+        <select id="filtre-statut" class="champ w-auto">
+          <option value="">Tous les statuts</option>
+          <option value="en_attente">En attente</option>
+          <option value="valide">Validées</option>
+          <option value="rejete">Rejetées</option>
+        </select>
+        <select id="filtre-type" class="champ w-auto">
+          <option value="">Achat et vente</option>
+          <option value="achat">Achat</option>
+          <option value="vente">Vente</option>
+        </select>
+        <button id="btn-rafraichir" class="btn btn-outline">Rafraîchir</button>
+      </div>
+
+      <div class="card overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-slate-400 border-b" style="border-color:var(--border)">
+              <th class="p-4 font-normal">Client</th>
+              <th class="p-4 font-normal">Type</th>
+              <th class="p-4 font-normal">Montant</th>
+              <th class="p-4 font-normal">Statut</th>
+              <th class="p-4 font-normal">Date</th>
+              <th class="p-4 font-normal">Preuve</th>
+              <th class="p-4 font-normal">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="corps-tableau">
+            <tr><td colspan="7" class="p-6 text-center text-slate-500">Chargement…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Onglet Configuration -->
+    <section id="onglet-configuration" class="hidden">
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="card p-6">
+          <h2 class="font-display text-lg font-semibold mb-4">Taux et adresse USDT</h2>
+          <form id="form-config" class="space-y-4">
+            <div>
+              <label class="text-xs text-slate-400 mb-1 block">Taux d'achat (FCFA / USDT)</label>
+              <input type="number" step="0.01" id="cfg-taux-achat" class="champ" required />
+            </div>
+            <div>
+              <label class="text-xs text-slate-400 mb-1 block">Taux de vente (FCFA / USDT)</label>
+              <input type="number" step="0.01" id="cfg-taux-vente" class="champ" required />
+            </div>
+            <div>
+              <label class="text-xs text-slate-400 mb-1 block">Marge bénéficiaire (FCFA / USDT)</label>
+              <input type="number" step="0.01" id="cfg-marge" class="champ" required />
+            </div>
+            <div>
+              <label class="text-xs text-slate-400 mb-1 block">Adresse USDT de réception</label>
+              <input type="text" id="cfg-adresse" class="champ font-mono text-xs" required />
+            </div>
+            <div>
+              <label class="text-xs text-slate-400 mb-1 block">Réseau</label>
+              <input type="text" id="cfg-reseau" class="champ" required />
+            </div>
+            <p id="config-message" class="text-sm hidden"></p>
+            <button type="submit" class="btn btn-primary w-full">Enregistrer</button>
+          </form>
+        </div>
+
+        <div class="card p-6">
+          <h2 class="font-display text-lg font-semibold mb-4">Numéros des agents Mobile Money</h2>
+          <div id="liste-agents-admin" class="space-y-3"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modale de zoom sur la preuve -->
+  <div id="modale-preuve" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-6 z-50" onclick="fermerModale()">
+    <img id="modale-image" src="" alt="Preuve de transaction" class="max-w-full max-h-full rounded-xl" />
+  </div>
+
+  <script src="/js/admin.js"></script>
+  <script>
+    if (!recupererTokenAdmin()) window.location.href = '/admin-login.html';
+
+    // --- Gestion des onglets ---
+    const onglets = document.querySelectorAll('.onglet-btn');
+    function activerOnglet(nom) {
+      onglets.forEach((b) => b.classList.toggle('btn-primary', b.dataset.onglet === nom));
+      document.getElementById('onglet-transactions').classList.toggle('hidden', nom !== 'transactions');
+      document.getElementById('onglet-configuration').classList.toggle('hidden', nom !== 'configuration');
+      if (nom === 'configuration') chargerConfigurationUI();
+    }
+    onglets.forEach((b) => b.addEventListener('click', () => activerOnglet(b.dataset.onglet)));
+    activerOnglet('transactions');
+
+    // --- Bénéfices ---
+    async function rafraichirBenefices() {
+      try {
+        const b = await chargerBenefices();
+        document.getElementById('benef-total').textContent = formaterFCFA(b.benefice_total_fcfa);
+        document.getElementById('benef-nb').textContent = b.transactions_validees;
+        document.getElementById('benef-achat').textContent = `${b.volume_achat_usdt} USDT`;
+        document.getElementById('benef-vente').textContent = `${b.volume_vente_usdt} USDT`;
+      } catch (e) { console.error(e); }
+    }
+
+    // --- Transactions ---
+    async function rafraichirTransactions() {
+      const corps = document.getElementById('corps-tableau');
+      corps.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-500">Chargement…</td></tr>';
+      try {
+        const filtres = {
+          statut: document.getElementById('filtre-statut').value,
+          type: document.getElementById('filtre-type').value,
+        };
+        Object.keys(filtres).forEach((k) => !filtres[k] && delete filtres[k]);
+        const transactions = await chargerTransactions(filtres);
+
+        if (transactions.length === 0) {
+          corps.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-500">Aucune transaction.</td></tr>';
+          return;
+        }
+
+        corps.innerHTML = transactions.map((t) => `
+          <tr class="border-b" style="border-color:var(--border)">
+            <td class="p-4">
+              <div class="font-medium">${t.prenom || ''} ${t.nom}</div>
+              <div class="text-xs text-slate-500">${t.telephone}</div>
+            </td>
+            <td class="p-4">
+              <span class="text-xs px-2.5 py-1 rounded-full font-medium" style="background:${t.type === 'achat' ? 'rgba(34,211,238,0.15);color:#22d3ee' : 'rgba(245,185,66,0.15);color:#f5b942'}">
+                ${t.type === 'achat' ? 'Achat' : 'Vente'}
+              </span>
+            </td>
+            <td class="p-4">
+              <div>${t.montant_usdt} USDT</div>
+              <div class="text-xs text-slate-500">${formaterFCFA(t.montant_fcfa)}</div>
+            </td>
+            <td class="p-4">${badgeStatut(t.statut)}</td>
+            <td class="p-4 text-xs text-slate-400">${formaterDate(t.created_at)}</td>
+            <td class="p-4">
+              ${t.preuve_url
+                ? `<button class="text-xs underline text-slate-300" onclick="ouvrirModale('${t.preuve_url}')">Voir</button>`
+                : (t.txid_usdt ? `<span class="text-xs font-mono text-slate-400">${t.txid_usdt.slice(0, 10)}…</span>` : '<span class="text-xs text-slate-600">—</span>')
+              }
+            </td>
+            <td class="p-4">
+              ${t.statut === 'en_attente' ? `
+                <div class="flex gap-2">
+                  <button class="btn btn-primary" style="padding:0.4rem 0.8rem;" onclick="validerTransaction('${t.id}')">Valider</button>
+                  <button class="btn" style="padding:0.4rem 0.8rem; background:rgba(242,88,107,0.15); color:#f2586b;" onclick="rejeterTransaction('${t.id}')">Rejeter</button>
+                </div>
+              ` : '<span class="text-xs text-slate-600">—</span>'}
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        corps.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-rose-400">${e.message}</td></tr>`;
+      }
+    }
+
+    async function validerTransaction(id) {
+      await changerStatutTransaction(id, 'valide');
+      rafraichirTransactions();
+      rafraichirBenefices();
+    }
+    async function rejeterTransaction(id) {
+      const note = prompt('Motif du rejet (optionnel) :') || '';
+      await changerStatutTransaction(id, 'rejete', note);
+      rafraichirTransactions();
+    }
+
+    function ouvrirModale(url) {
+      document.getElementById('modale-image').src = url;
+      document.getElementById('modale-preuve').classList.remove('hidden');
+    }
+    function fermerModale() {
+      document.getElementById('modale-preuve').classList.add('hidden');
+    }
+
+    document.getElementById('btn-rafraichir').addEventListener('click', rafraichirTransactions);
+    document.getElementById('filtre-statut').addEventListener('change', rafraichirTransactions);
+    document.getElementById('filtre-type').addEventListener('change', rafraichirTransactions);
+
+    // --- Configuration ---
+    async function chargerConfigurationUI() {
+      try {
+        const cfg = await chargerConfig();
+        document.getElementById('cfg-taux-achat').value = cfg.taux_achat;
+        document.getElementById('cfg-taux-vente').value = cfg.taux_vente;
+        document.getElementById('cfg-marge').value = cfg.marge_beneficiaire;
+        document.getElementById('cfg-adresse').value = cfg.adresse_usdt;
+        document.getElementById('cfg-reseau').value = cfg.reseau_usdt;
+
+        const agents = await chargerAgentsAdmin();
+        const conteneur = document.getElementById('liste-agents-admin');
+        conteneur.innerHTML = agents.map((a) => `
+          <div class="flex items-center gap-2">
+            <div class="flex-1">
+              <div class="text-xs text-slate-400">${a.pays} · ${a.operateur}</div>
+              <input type="text" class="champ mt-1" value="${a.numero || ''}" placeholder="Aucun numéro" data-agent-id="${a.id}" />
+            </div>
+            <button class="btn btn-outline" style="padding:0.6rem 1rem;" onclick="sauvegarderAgent('${a.id}', this)">OK</button>
+          </div>
+        `).join('');
+      } catch (e) { console.error(e); }
+    }
+
+    async function sauvegarderAgent(id, bouton) {
+      const input = document.querySelector(`input[data-agent-id="${id}"]`);
+      bouton.textContent = '…';
+      try {
+        await enregistrerAgent(id, { numero: input.value, actif: true });
+        bouton.textContent = '✓';
+        setTimeout(() => (bouton.textContent = 'OK'), 1200);
+      } catch (e) {
+        alert(e.message);
+        bouton.textContent = 'OK';
+      }
+    }
+
+    document.getElementById('form-config').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const messageEl = document.getElementById('config-message');
+      try {
+        await enregistrerConfig({
+          taux_achat: document.getElementById('cfg-taux-achat').value,
+          taux_vente: document.getElementById('cfg-taux-vente').value,
+          marge_beneficiaire: document.getElementById('cfg-marge').value,
+          adresse_usdt: document.getElementById('cfg-adresse').value,
+          reseau_usdt: document.getElementById('cfg-reseau').value,
+        });
+        messageEl.textContent = 'Configuration enregistrée avec succès.';
+        messageEl.style.color = '#26a17b';
+        messageEl.classList.remove('hidden');
+      } catch (e) {
+        messageEl.textContent = e.message;
+        messageEl.style.color = '#f2586b';
+        messageEl.classList.remove('hidden');
+      }
+    });
+
+    // --- Initialisation ---
+    rafraichirBenefices();
+    rafraichirTransactions();
+  </script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Acheter des USDT — Étape 4 · En attente</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="min-h-screen flex items-center justify-center p-5">
+
+  <div class="w-full max-w-md entree-ecran">
+    <div class="flex items-center justify-between mb-4">
+      <span></span>
+      <span class="text-xs text-slate-500">Étape 4 sur 5</span>
+    </div>
+
+    <div class="etapes mb-6" id="barre-etapes"></div>
+
+    <div class="card glow-achat p-10 flex flex-col items-center text-center">
+      <div class="spinner mb-6"></div>
+      <h1 class="font-display text-xl font-semibold mb-2">En attente de validation…</h1>
+      <p class="text-sm text-slate-400 max-w-xs">
+        Notre équipe vérifie votre preuve de paiement. Patientez quelques minutes, cette page se met à jour automatiquement.
+      </p>
+      <p id="statut-rejete" class="text-sm text-rose-400 mt-4 hidden">
+        Votre transaction a été rejetée. Contactez le support pour plus d'informations.
+      </p>
+    </div>
+  </div>
+
+  <script src="/js/main.js"></script>
+  <script>
+    rendreEtapes(document.getElementById('barre-etapes'), 4);
+    const p = exigerParcours(['transaction_id'], '/achat-step1.html');
+
+    async function verifier() {
+      try {
+        const { statut } = await verifierStatut(p.transaction_id);
+        if (statut === 'valide') {
+          window.location.href = '/achat-step5.html';
+        } else if (statut === 'rejete') {
+          document.getElementById('statut-rejete').classList.remove('hidden');
+        }
+      } catch (e) {
+        // silencieux : on retentera au prochain intervalle
+      }
+    }
+
+    verifier();
+    setInterval(verifier, 6000); // interroge le serveur toutes les 6 secondes
+  </script>
+</body>
+</html>

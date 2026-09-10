@@ -1,0 +1,174 @@
+/* =====================================================================
+   AfriChange USDT — Styles partagés
+   Palette : fond bleu-nuit profond, accent vert USDT, accents cyan/or
+   pour distinguer les flux Achat / Vente. Tailwind gère la mise en page ;
+   ce fichier gère l'identité visuelle (couleurs, effets, animations).
+   ===================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  --bg: #0a0e17;
+  --bg-soft: #0d1320;
+  --surface: #121a2b;
+  --surface-alt: #1a2438;
+  --border: #232f47;
+  --text: #e8edf7;
+  --muted: #8a96ac;
+  --usdt: #26a17b;
+  --usdt-soft: rgba(38, 161, 123, 0.15);
+  --achat: #22d3ee;
+  --achat-soft: rgba(34, 211, 238, 0.15);
+  --vente: #f5b942;
+  --vente-soft: rgba(245, 185, 66, 0.15);
+  --danger: #f2586b;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: radial-gradient(circle at 15% 0%, #10192c 0%, var(--bg) 45%) fixed;
+  color: var(--text);
+  font-family: 'Inter', system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+h1, h2, h3, .font-display {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+/* --- Carte principale des écrans --- */
+.card {
+  background: linear-gradient(180deg, var(--surface) 0%, var(--bg-soft) 100%);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.6);
+}
+
+/* --- Effet de lumière (glow) réutilisable --- */
+.glow-usdt   { box-shadow: 0 0 0 1px var(--usdt-soft), 0 0 40px -8px var(--usdt); }
+.glow-achat  { box-shadow: 0 0 0 1px var(--achat-soft), 0 0 40px -8px var(--achat); }
+.glow-vente  { box-shadow: 0 0 0 1px var(--vente-soft), 0 0 40px -8px var(--vente); }
+
+/* --- Boutons --- */
+.btn {
+  font-weight: 600;
+  border-radius: 14px;
+  padding: 0.9rem 1.5rem;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.btn:active { transform: scale(0.98); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--usdt), #1c7a5c);
+  color: #06120d;
+  box-shadow: 0 0 30px -6px var(--usdt);
+}
+.btn-primary:hover:not(:disabled) { box-shadow: 0 0 45px -4px var(--usdt); }
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.btn-outline:hover { border-color: var(--muted); }
+
+/* --- Champs de formulaire --- */
+.champ {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  width: 100%;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.champ::placeholder { color: var(--muted); }
+.champ:focus {
+  outline: none;
+  border-color: var(--usdt);
+  box-shadow: 0 0 0 3px var(--usdt-soft);
+}
+
+/* --- Indicateur d'étapes (le contenu EST une séquence : la numérotation est justifiée) --- */
+.etapes { display: flex; align-items: center; gap: 6px; }
+.etape-point {
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border);
+  transition: background 0.3s ease;
+}
+.etape-point.faite { background: var(--usdt); box-shadow: 0 0 10px var(--usdt); }
+.etape-point.active { background: linear-gradient(90deg, var(--usdt), var(--achat)); }
+
+/* --- Sélecteurs opérateur / pays sous forme de cartes cliquables --- */
+.choix-carte {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  text-align: center;
+}
+.choix-carte:hover { border-color: var(--muted); }
+.choix-carte.selectionne {
+  border-color: var(--usdt);
+  background: var(--usdt-soft);
+}
+
+/* --- Logo opérateur (pastille colorée) --- */
+.logo-pastille {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.75rem;
+  margin: 0 auto 0.5rem;
+  color: #08101f;
+}
+
+/* --- Animation de transition entre écrans (un seul mouvement, pas de cascade) --- */
+.entree-ecran {
+  animation: apparition 0.35s ease both;
+}
+@keyframes apparition {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Spinner d'attente (écran 4) --- */
+.spinner {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  border: 3px solid var(--border);
+  border-top-color: var(--usdt);
+  animation: tourner 0.9s linear infinite;
+}
+@keyframes tourner { to { transform: rotate(360deg); } }
+
+/* --- Icône de succès --- */
+.cercle-succes {
+  width: 84px; height: 84px;
+  border-radius: 50%;
+  background: var(--usdt-soft);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 50px -10px var(--usdt);
+}
+
+/* Respect du mouvement réduit */
+@media (prefers-reduced-motion: reduce) {
+  .entree-ecran, .spinner { animation: none; }
+}
+
+/* Focus clavier visible partout */
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid var(--achat);
+  outline-offset: 2px;
+}

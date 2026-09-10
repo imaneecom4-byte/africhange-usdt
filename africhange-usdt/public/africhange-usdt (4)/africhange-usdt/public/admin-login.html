@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AfriChange USDT — Connexion admin</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="min-h-screen flex items-center justify-center p-5">
+
+  <div class="w-full max-w-sm entree-ecran">
+    <div class="text-center mb-6">
+      <div class="w-11 h-11 rounded-xl flex items-center justify-center font-display font-bold mx-auto mb-3" style="background:#26a17b;color:#06120d;">₮</div>
+      <h1 class="font-display text-xl font-semibold">Espace administrateur</h1>
+      <p class="text-sm text-slate-400">Réservé à l'équipe AfriChange USDT</p>
+    </div>
+
+    <div class="card glow-usdt p-7">
+      <form id="form-login" class="space-y-4">
+        <div>
+          <label class="text-xs text-slate-400 mb-1 block">Adresse e-mail</label>
+          <input type="email" id="email" class="champ" placeholder="admin@africhange.com" required />
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 mb-1 block">Mot de passe</label>
+          <input type="password" id="password" class="champ" placeholder="••••••••" required />
+        </div>
+
+        <p id="erreur" class="text-sm text-rose-400 hidden"></p>
+
+        <button type="submit" class="btn btn-primary w-full">Se connecter</button>
+      </form>
+    </div>
+
+    <p class="text-center text-xs text-slate-600 mt-6">
+      <a href="/index.html" class="hover:text-slate-400">&larr; Retour au site</a>
+    </p>
+  </div>
+
+  <script src="/js/admin.js"></script>
+  <script>
+    if (recupererTokenAdmin()) window.location.href = '/admin-dashboard.html';
+
+    document.getElementById('form-login').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const erreurEl = document.getElementById('erreur');
+      erreurEl.classList.add('hidden');
+
+      try {
+        await connexionAdmin(
+          document.getElementById('email').value,
+          document.getElementById('password').value
+        );
+        window.location.href = '/admin-dashboard.html';
+      } catch (err) {
+        erreurEl.textContent = err.message;
+        erreurEl.classList.remove('hidden');
+      }
+    });
+  </script>
+</body>
+</html>
