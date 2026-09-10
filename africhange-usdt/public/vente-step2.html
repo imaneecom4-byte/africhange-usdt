@@ -7,6 +7,7 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/css/style.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   #qrcode-container {
     display: flex;
@@ -23,7 +24,7 @@
   }
 </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-5">
+<body class="min-h-screen flex items-center justify-center p-5 bg-slate-900 text-white">
 
   <div class="w-full max-w-md entree-ecran">
     <div class="flex items-center justify-between mb-4">
@@ -33,78 +34,120 @@
 
     <div class="etapes mb-6" id="barre-etapes"></div>
 
-    <div class="card glow-vente p-7">
-      <h1 class="font-display text-2xl font-semibold mb-1">Envoyez vos USDT</h1>
-      <p class="text-sm text-slate-400 mb-5">Scannez le QR code ou copiez l'adresse ci-dessous.</p>
-
-      <!-- Conteneur du QR Code -->
-      <div id="qrcode-container">
-        <!-- Le QR Code sera généré ici -->
+    <div class="card glow-vente p-7 relative">
+      
+      <!-- Erreur Session -->
+      <div id="error-container" class="hidden absolute inset-0 bg-slate-900/95 z-10 flex flex-col items-center justify-center text-center p-6 rounded-2xl">
+        <div class="text-red-500 text-4xl mb-4">⚠️</div>
+        <h2 class="text-xl font-bold mb-2">Session Expirée</h2>
+        <p class="text-sm text-slate-400 mb-6">Aucune transaction en cours.</p>
+        <button onclick="window.location.href='/vente-step1.html'" class="bg-amber-600 text-white px-6 py-2 rounded-lg">Recommencer</button>
       </div>
 
-      <div class="rounded-2xl p-4 mb-5 flex items-center justify-between gap-3" style="background:var(--surface-alt); border:1px solid var(--border)">
-        <!-- ADRESSE PAR DÉFAUT POUR ÉVITER LE BLOCAGE -->
-        <span id="adresse-usdt" class="text-xs font-mono break-all text-slate-300">0x5da17b728ab2d61ab273a1844b4ce0db4c545f95</span>
-        <button id="btn-copier" class="text-xs px-3 py-1.5 rounded-lg whitespace-nowrap" style="background:var(--surface); border:1px solid var(--border); color:white;">Copier</button>
+      <div id="form-container">
+        <h1 class="font-display text-2xl font-semibold mb-1">Envoyez vos USDT</h1>
+        <p class="text-sm text-slate-400 mb-5">Scannez le QR code ou copiez l'adresse ci-dessous.</p>
+
+        <!-- Conteneur du QR Code -->
+        <div id="qrcode-container">
+          <!-- Le QR Code sera généré ici -->
+        </div>
+
+        <div class="rounded-2xl p-4 mb-5 flex items-center justify-between gap-3 bg-slate-800/50 border border-slate-700">
+          <span id="adresse-usdt" class="text-xs font-mono break-all text-slate-300">Chargement...</span>
+          <button id="btn-copier" class="text-xs px-3 py-1.5 rounded-lg whitespace-nowrap bg-slate-700 hover:bg-slate-600 text-white transition">Copier</button>
+        </div>
+
+        <div class="flex justify-between text-sm mb-5">
+          <span class="text-slate-400">Montant à envoyer</span>
+          <span id="montant-usdt" class="font-medium font-display text-white"></span>
+        </div>
+
+        <ol class="text-sm text-slate-400 space-y-2 list-decimal list-inside mb-6">
+          <li>Ouvrez votre wallet crypto (Trust Wallet, Binance, etc.).</li>
+          <li>Scannez le QR code ou copiez l'adresse pour envoyer les USDT.</li>
+          <li>Envoyez exactement le montant indiqué sur le bon réseau (TRC20/BEP20).</li>
+          <li>Conservez le hash (TxID) de la transaction pour l'étape suivante.</li>
+        </ol>
+
+        <p id="erreur-msg" class="text-sm text-rose-400 hidden mb-3 text-center"></p>
+        <button id="btn-continuer" class="btn w-full bg-amber-600 hover:bg-amber-500 text-white py-3 rounded-xl font-bold shadow-lg transition disabled:opacity-50">J'ai envoyé mes USDT</button>
       </div>
-
-      <div class="flex justify-between text-sm mb-5">
-        <span class="text-slate-400">Montant à envoyer</span>
-        <span id="montant-usdt" class="font-medium font-display text-white"></span>
-      </div>
-
-      <ol class="text-sm text-slate-400 space-y-2 list-decimal list-inside mb-6">
-        <li>Ouvrez votre wallet crypto (Trust Wallet, Binance, etc.).</li>
-        <li>Scannez le QR code ou copiez l'adresse pour envoyer les USDT.</li>
-        <li>Envoyez exactement le montant indiqué sur le bon réseau (TRC20/BEP20).</li>
-        <li>Conservez le hash (TxID) de la transaction pour l'étape suivante.</li>
-      </ol>
-
-      <p id="erreur" class="text-sm text-rose-400 hidden mb-3"></p>
-      <button id="btn-continuer" class="btn w-full" style="background:linear-gradient(135deg,#f5b942,#c98a1c); color:#1a1000;">J'ai envoyé mes USDT</button>
     </div>
   </div>
 
   <script>
-    // Fonction utilitaire pour les étapes
-    function rendreEtapes(container, currentStep) {
-        if(!container) return;
-        container.innerHTML = '';
-        for(let i=1; i<=5; i++) {
-            const point = document.createElement('div');
-            point.className = `etape-point ${i < currentStep ? 'faite' : ''} ${i === currentStep ? 'active' : ''}`;
-            container.appendChild(point);
-        }
+    const SB_URL = 'https://qlsetlqyejwrhztbesto.supabase.co';
+    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4';
+    
+    let sbClient = null;
+    if (typeof window.supabase !== 'undefined') {
+      sbClient = window.supabase.createClient(SB_URL, SB_KEY);
     }
 
-    // Initialisation - VERSION SIMPLIFIÉE SANS SUPABASE
-    document.addEventListener('DOMContentLoaded', () => {
-        rendreEtapes(document.getElementById('barre-etapes'), 2);
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Rendu des étapes
+        const barre = document.getElementById('barre-etapes');
+        if(barre) {
+            barre.innerHTML = '';
+            for(let i=1; i<=5; i++) {
+                const p = document.createElement('div');
+                p.className = `etape-point ${i < 2 ? 'faite' : ''} ${i === 2 ? 'active' : ''}`;
+                barre.appendChild(p);
+            }
+        }
 
         const dataJSON = sessionStorage.getItem('transaction_vente');
-        const errorEl = document.getElementById('erreur');
+        const errorEl = document.getElementById('erreur-msg');
+        const btn = document.getElementById('btn-continuer');
+        const adresseEl = document.getElementById('adresse-usdt');
 
         if (!dataJSON) {
-            errorEl.textContent = "Aucune transaction trouvée. Veuillez recommencer.";
-            errorEl.classList.remove('hidden');
-            setTimeout(() => window.location.href = '/vente-step1.html', 3000);
+            document.getElementById('form-container').classList.add('hidden');
+            document.getElementById('error-container').classList.remove('hidden');
             return;
         }
 
+        let p;
         try {
-            const p = JSON.parse(dataJSON);
-            
-            // Affichage des données de base
-            document.getElementById('montant-usdt').textContent = `${p.montant_usdt} USDT`;
-            
-            // Adresse USDT par défaut (celle que tu as configurée dans l'admin)
-            const adresseUSDT = p.adresse_wallet_usdt || '0x5da17b728ab2d61ab273a1844b4ce0db4c545f95';
-            document.getElementById('adresse-usdt').textContent = adresseUSDT;
+            p = JSON.parse(dataJSON);
+        } catch (e) {
+            errorEl.textContent = "Erreur de lecture des données.";
+            errorEl.classList.remove('hidden');
+            btn.disabled = true;
+            return;
+        }
 
-            // Génération du QR Code avec l'adresse par défaut
-            const qrcodeContainer = document.getElementById('qrcode-container');
-            qrcodeContainer.innerHTML = '';
-            
+        // Affichage du montant
+        document.getElementById('montant-usdt').textContent = `${p.montant_usdt} USDT`;
+
+        // --- RÉCUPÉRATION DE L'ADRESSE USDT DEPUIS SUPABASE ---
+        let adresseUSDT = '0x5da17b728ab2d61ab273a1844b4ce0db4c545f95'; // Adresse par défaut
+        
+        if (sbClient) {
+            try {
+                const { data: config, error } = await sbClient
+                    .from('config')
+                    .select('adresse_usdt_reception')
+                    .eq('id', 1)
+                    .single();
+
+                if (!error && config && config.adresse_usdt_reception) {
+                    adresseUSDT = config.adresse_usdt_reception;
+                    console.log("Adresse USDT chargée depuis config:", adresseUSDT);
+                }
+            } catch (e) {
+                console.warn("Impossible de charger la config, utilisation adresse par défaut");
+            }
+        }
+
+        adresseEl.textContent = adresseUSDT;
+
+        // Génération du QR Code
+        const qrcodeContainer = document.getElementById('qrcode-container');
+        qrcodeContainer.innerHTML = '';
+        
+        try {
             new QRCode(qrcodeContainer, {
                 text: adresseUSDT,
                 width: 200,
@@ -113,35 +156,34 @@
                 colorLight : "#ffffff",
                 correctLevel : QRCode.CorrectLevel.H
             });
-
-            // Gestion du bouton Copier
-            document.getElementById('btn-copier').addEventListener('click', () => {
-                const addr = document.getElementById('adresse-usdt').textContent;
-                navigator.clipboard.writeText(addr).then(() => {
-                    const btn = document.getElementById('btn-copier');
-                    const originalText = btn.textContent;
-                    btn.textContent = "Copié !";
-                    setTimeout(() => btn.textContent = originalText, 2000);
-                }).catch(err => {
-                    console.error('Erreur copie:', err);
-                });
-            });
-
-            // Gestion du bouton "J'ai envoyé mes USDT"
-            document.getElementById('btn-continuer').addEventListener('click', async () => {
-                const bouton = document.getElementById('btn-continuer');
-                bouton.disabled = true;
-                bouton.textContent = 'Validation...';
-                
-                alert("Envoi enregistré ! Nous vérifions la blockchain.");
-                window.location.href = '/vente-step3.html';
-            });
-
         } catch (e) {
-            console.error(e);
-            errorEl.textContent = "Erreur de lecture des données.";
-            errorEl.classList.remove('hidden');
+            console.error("Erreur génération QR:", e);
+            qrcodeContainer.innerHTML = '<p class="text-red-400 text-sm">Erreur QR Code</p>';
         }
+
+        // Gestion du bouton Copier
+        document.getElementById('btn-copier').addEventListener('click', () => {
+            const addr = adresseEl.textContent;
+            navigator.clipboard.writeText(addr).then(() => {
+                const btnCopier = document.getElementById('btn-copier');
+                const originalText = btnCopier.textContent;
+                btnCopier.textContent = "Copié !";
+                btnCopier.classList.add('bg-emerald-600');
+                setTimeout(() => {
+                    btnCopier.textContent = originalText;
+                    btnCopier.classList.remove('bg-emerald-600');
+                }, 2000);
+            }).catch(err => {
+                console.error('Erreur copie:', err);
+            });
+        });
+
+        // Gestion du bouton "J'ai envoyé mes USDT"
+        btn.addEventListener('click', () => {
+            btn.disabled = true;
+            btn.textContent = 'Redirection...';
+            window.location.href = '/vente-step3.html';
+        });
     });
   </script>
 </body>
