@@ -6,7 +6,6 @@
 <title>Acheter des USDT — Étape 4 · En attente</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/css/style.css" />
-<!-- On ajoute Supabase pour pouvoir vérifier le statut -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="min-h-screen flex items-center justify-center p-5">
@@ -35,25 +34,20 @@
   </div>
 
   <script>
-    // Configuration Supabase
     const SUPABASE_URL = 'https://qlsetlqyejwrhztbesto.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4';
-    
-    // CORRECTION ICI : On utilise une autre variable pour éviter le conflit
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Fonction utilitaire pour les étapes
     function rendreEtapes(container, currentStep) {
         if(!container) return;
         container.innerHTML = '';
         for(let i=1; i<=5; i++) {
             const point = document.createElement('div');
-            point.className = `etape-point ${i < currentStep ? 'faite' : ''} ${i === currentStep ? 'active' : ''}`;
+            point.className = `etape-point ${i < currentStep ? 'faite' : ''} ${i === currentStep ? ' active' : ''}`;
             container.appendChild(point);
         }
     }
 
-    // Initialisation
     document.addEventListener('DOMContentLoaded', () => {
         rendreEtapes(document.getElementById('barre-etapes'), 4);
 
@@ -64,9 +58,7 @@
         if (!dataJSON) {
             erreurEl.textContent = "Aucune transaction trouvée. Veuillez recommencer.";
             erreurEl.classList.remove('hidden');
-            setTimeout(() => {
-                window.location.href = '/achat-step1.html';
-            }, 3000);
+            setTimeout(() => { window.location.href = '/achat-step1.html'; }, 3000);
             return;
         }
 
@@ -76,9 +68,10 @@
             
             console.log("Vérification du statut pour la transaction:", transactionId);
 
+            let intervalleVerification;
+
             async function verifierStatut() {
                 try {
-                    // CORRECTION ICI : On utilise supabaseClient au lieu de supabase
                     const { data, error } = await supabaseClient
                         .from('transactions')
                         .select('statut')
@@ -93,11 +86,13 @@
                     if (data) {
                         console.log("Statut actuel:", data.statut);
                         
-                        if (data.statut === 'validée') {
-                            window.location.href = '/achat-step5.html';
-                        } else if (data.statut === 'rejete' || data.statut === 'échouée') {
-                            rejeteEl.classList.remove('hidden');
+                        // ✅ CORRECTION : accepte les DEUX orthographes
+                        if (data.statut === 'valide' || data.statut === 'validée') {
                             clearInterval(intervalleVerification);
+                            window.location.href = '/achat-step5.html';
+                        } else if (data.statut === 'rejete' || data.statut === 'rejetée' || data.statut === 'échouée') {
+                            clearInterval(intervalleVerification);
+                            rejeteEl.classList.remove('hidden');
                         }
                     }
                 } catch (e) {
@@ -106,7 +101,7 @@
             }
 
             verifierStatut();
-            const intervalleVerification = setInterval(verifierStatut, 6000);
+            intervalleVerification = setInterval(verifierStatut, 6000);
 
         } catch (e) {
             console.error("Erreur de parsing des données:", e);
