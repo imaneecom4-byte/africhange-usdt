@@ -66,6 +66,101 @@
   #install-banner button:hover { transform: scale(1.05); }
   #install-banner button:active { transform: scale(0.95); }
   /* ===== FIN AJOUT PWA ===== */
+
+  /* ===== NOUVEAU : Carrousel promos ===== */
+  .carousel-container {
+    position: relative;
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto 4rem;
+    overflow: hidden;
+    border-radius: 1rem;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .carousel-track {
+    display: flex;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .carousel-slide {
+    min-width: 100%;
+    aspect-ratio: 16 / 7;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .carousel-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .carousel-dots {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 2;
+  }
+  .carousel-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  .carousel-dot.active { background: white; width: 24px; border-radius: 4px; }
+  .carousel-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    transition: background 0.2s;
+  }
+  .carousel-arrow:hover { background: rgba(0, 0, 0, 0.8); }
+  .carousel-arrow.prev { left: 12px; }
+  .carousel-arrow.next { right: 12px; }
+  /* ===== FIN CARROUSEL ===== */
+
+  /* ===== NOUVEAU : Bouton WhatsApp flottant ===== */
+  #whatsapp-button {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 60px;
+    height: 60px;
+    background: #25D366;
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px rgba(37, 211, 102, 0.5);
+    z-index: 9998;
+    transition: transform 0.2s;
+    text-decoration: none;
+    animation: pulseWhats 2s ease-in-out infinite;
+  }
+  #whatsapp-button:hover { transform: scale(1.1); }
+  @keyframes pulseWhats {
+    0%, 100% { box-shadow: 0 8px 24px rgba(37, 211, 102, 0.5); }
+    50% { box-shadow: 0 8px 32px rgba(37, 211, 102, 0.8); }
+  }
+  /* ===== FIN WHATSAPP ===== */
 </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
@@ -95,6 +190,17 @@
         Envoyez ou recevez de l'argent via Orange Money, Moov Money, Wave, MTN Money ou Celtiis — sans détour, avec un suivi clair à chaque étape.
       </p>
     </section>
+
+    <!-- ===== NOUVEAU : Carrousel Promos ===== -->
+    <section id="carousel-section" class="hidden mb-16">
+      <div class="carousel-container">
+        <div id="carousel-track" class="carousel-track"></div>
+        <button class="carousel-arrow prev" onclick="carouselPrev()">‹</button>
+        <button class="carousel-arrow next" onclick="carouselNext()">›</button>
+        <div id="carousel-dots" class="carousel-dots"></div>
+      </div>
+    </section>
+    <!-- ===== FIN CARROUSEL ===== -->
 
     <!-- Options Principales -->
     <section class="grid md:grid-cols-2 gap-8 mb-16">
@@ -208,7 +314,7 @@
     </div>
   </footer>
 
-  <!-- ===== AJOUT PWA : Bannière d'installation (cachée par défaut) ===== -->
+  <!-- ===== AJOUT PWA : Bannière d'installation ===== -->
   <div id="install-banner">
     <div>
       <div class="font-bold text-base">📱 Installer AfriChange</div>
@@ -217,10 +323,19 @@
     <button id="install-button">Installer</button>
   </div>
 
+  <!-- ===== NOUVEAU : Bouton WhatsApp flottant ===== -->
+  <a id="whatsapp-button" href="#" target="_blank" rel="noopener" aria-label="Contactez-nous sur WhatsApp">
+    <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="white">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+    </svg>
+  </a>
+  <!-- ===== FIN WHATSAPP ===== -->
+
   <script>
-    // ===== AJOUT PWA : Service Worker + Bannière d'installation =====
-    
-    // Enregistrement du Service Worker
+    const SB_URL = 'https://qlsetlqyejwrhztbesto.supabase.co';
+    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4';
+
+    // ===== PWA : Service Worker + bannière =====
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
@@ -228,38 +343,98 @@
           .catch(err => console.log('❌ Erreur Service Worker:', err));
       });
     }
-
-    // Gestion de l'installation PWA
     let deferredPrompt;
     const installBanner = document.getElementById('install-banner');
     const installButton = document.getElementById('install-button');
-
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
       installBanner.classList.add('show');
     });
-
     installButton.addEventListener('click', async () => {
       if (!deferredPrompt) return;
-      
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      
-      if (outcome === 'accepted') {
-        console.log('✅ Application installée');
-      }
-      
+      if (outcome === 'accepted') console.log('✅ Application installée');
       deferredPrompt = null;
       installBanner.classList.remove('show');
     });
-
     window.addEventListener('appinstalled', () => {
       installBanner.classList.remove('show');
-      console.log('🎉 PWA installée avec succès');
+      console.log('🎉 PWA installée');
     });
-    
-    // ===== FIN AJOUT PWA =====
+
+    // ===== NOUVEAU : Bouton WhatsApp =====
+    (async () => {
+      try {
+        const resp = await fetch(`${SB_URL}/rest/v1/config?id=eq.1&select=numero_whatsapp`, {
+          headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
+        });
+        const data = await resp.json();
+        if (data && data[0] && data[0].numero_whatsapp) {
+          const numero = data[0].numero_whatsapp.replace(/[^0-9]/g, '');
+          const message = encodeURIComponent("Bonjour AfriChange, j'ai besoin d'aide.");
+          const btn = document.getElementById('whatsapp-button');
+          btn.href = `https://wa.me/${numero}?text=${message}`;
+          btn.style.display = 'flex';
+        }
+      } catch (e) { console.error('WhatsApp:', e); }
+    })();
+
+    // ===== NOUVEAU : Carrousel Promos =====
+    let carouselIndex = 0;
+    let carouselSlides = [];
+    let carouselTimer = null;
+
+    async function chargerPromos() {
+      try {
+        const resp = await fetch(`${SB_URL}/rest/v1/promos?actif=eq.true&order=created_at.desc`, {
+          headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
+        });
+        const promos = await resp.json();
+        if (!promos || promos.length === 0) return;
+
+        carouselSlides = promos.map(p => p.image_url);
+        const track = document.getElementById('carousel-track');
+        const dots = document.getElementById('carousel-dots');
+
+        track.innerHTML = carouselSlides.map(url =>
+          `<div class="carousel-slide"><img src="${url}" alt="Promo AfriChange"></div>`
+        ).join('');
+
+        dots.innerHTML = carouselSlides.map((_, i) =>
+          `<div class="carousel-dot ${i === 0 ? 'active' : ''}" onclick="goToSlide(${i})"></div>`
+        ).join('');
+
+        document.getElementById('carousel-section').classList.remove('hidden');
+        carouselTimer = setInterval(carouselNext, 5000);
+      } catch (e) { console.error('Promos:', e); }
+    }
+
+    function updateCarousel() {
+      const track = document.getElementById('carousel-track');
+      track.style.transform = `translateX(-${carouselIndex * 100}%)`;
+      document.querySelectorAll('.carousel-dot').forEach((d, i) => {
+        d.classList.toggle('active', i === carouselIndex);
+      });
+    }
+    window.carouselNext = function() {
+      if (carouselSlides.length === 0) return;
+      carouselIndex = (carouselIndex + 1) % carouselSlides.length;
+      updateCarousel();
+    };
+    window.carouselPrev = function() {
+      if (carouselSlides.length === 0) return;
+      carouselIndex = (carouselIndex - 1 + carouselSlides.length) % carouselSlides.length;
+      updateCarousel();
+    };
+    window.goToSlide = function(i) {
+      carouselIndex = i;
+      updateCarousel();
+      if (carouselTimer) { clearInterval(carouselTimer); carouselTimer = setInterval(carouselNext, 5000); }
+    };
+
+    chargerPromos();
   </script>
 
 </body>
