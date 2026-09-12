@@ -19,9 +19,42 @@
   .toast { background: rgba(15, 23, 42, 0.95); color: white; padding: 1rem 1.5rem; border-radius: 0.75rem; box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 0.75rem; min-width: 280px; border-left: 4px solid #10b981; animation: fadeIn 0.3s ease-out; }
   .toast.error { border-left-color: #ef4444; }
   .toast.warning { border-left-color: #f59e0b; }
-  /* NOUVEAU : bouton copier */
   .btn-copie { background: rgba(34, 211, 238, 0.15); border: 1px solid rgba(34, 211, 238, 0.4); color: #67e8f9; border-radius: 6px; padding: 2px 6px; font-size: 10px; cursor: pointer; margin-left: 4px; }
   .btn-copie:hover { background: rgba(34, 211, 238, 0.3); color: white; }
+  /* NOUVEAU : drop zone promos */
+  .drop-zone {
+    border: 2px dashed rgba(16, 185, 129, 0.3);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: rgba(16, 185, 129, 0.03);
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+  }
+  .promo-item {
+    position: relative;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    aspect-ratio: 16/7;
+    background: #0f172a;
+  }
+  .promo-item img { width: 100%; height: 100%; object-fit: cover; }
+  .promo-item .overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 50%);
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    padding: 0.5rem;
+    gap: 0.5rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .promo-item:hover .overlay { opacity: 1; }
 </style>
 </head>
 <body class="min-h-screen">
@@ -130,9 +163,34 @@
               <label class="text-xs text-slate-400 block mb-1">Adresse USDT</label>
               <input type="text" id="cfg-adresse" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-slate-300 outline-none" placeholder="0x...">
             </div>
+            <!-- NOUVEAU : Champ WhatsApp -->
+            <div>
+              <label class="text-xs text-slate-400 block mb-1">Numéro WhatsApp (service client)</label>
+              <input type="tel" id="cfg-whatsapp" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none" placeholder="+226...">
+              <p class="text-[10px] text-slate-500 mt-1">Format : +226XXXXXXXX (avec le +, sans espaces)</p>
+            </div>
+            <!-- FIN NOUVEAU -->
             <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2 rounded-lg">Sauvegarder</button>
           </form>
         </div>
+
+        <!-- NOUVEAU : Gestion des bannières promo -->
+        <div class="glass-card p-6 rounded-2xl">
+          <h3 class="font-bold text-white mb-4 flex items-center gap-2"><i class="ph ph-image-square text-pink-400"></i> Bannières Promo</h3>
+          <p class="text-xs text-slate-400 mb-3">Glisse une image pour l'ajouter. Elle apparaîtra en carrousel sur l'accueil.</p>
+          
+          <label class="drop-zone block mb-4" id="drop-zone">
+            <input type="file" id="input-promo" accept="image/*" class="hidden">
+            <i class="ph ph-upload-simple text-3xl text-emerald-400 mb-1 block"></i>
+            <div class="text-sm text-slate-300 font-medium">Glisse ou clique pour ajouter</div>
+            <div class="text-xs text-slate-500 mt-1">PNG, JPG · 16:7 recommandé</div>
+          </label>
+
+          <div id="liste-promos" class="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+            <div class="text-center text-slate-500 py-4">Chargement...</div>
+          </div>
+        </div>
+        <!-- FIN NOUVEAU -->
 
         <div class="glass-card p-6 rounded-2xl">
           <div class="flex justify-between items-center mb-4">
@@ -187,23 +245,17 @@
         setTimeout(() => t.remove(), 4000);
       }
 
-      // ===== NOUVEAU : COPIE EN 1 CLIC =====
       window.copierTexte = function (texte) {
         if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(texte).then(() => {
-            showToast('📋 Adresse copiée !');
-          }).catch(() => copieSecours(texte));
+          navigator.clipboard.writeText(texte).then(() => showToast('📋 Adresse copiée !')).catch(() => copieSecours(texte));
         } else {
           copieSecours(texte);
         }
       };
       function copieSecours(texte) {
         const ta = document.createElement('textarea');
-        ta.value = texte;
-        ta.style.position = 'fixed';
-        ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.select();
+        ta.value = texte; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
         try { document.execCommand('copy'); showToast('📋 Adresse copiée !'); }
         catch (e) { showToast('Copie impossible', 'error'); }
         document.body.removeChild(ta);
@@ -258,7 +310,6 @@
             if (t.statut === 'valide') { statusClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'; statusLabel = 'Validée'; }
             if (t.statut === 'rejete') { statusClass = 'bg-red-500/10 text-red-400 border-red-500/20'; statusLabel = 'Rejetée'; }
 
-            // ===== NOUVEAU : adresse wallet + bouton copier =====
             const wallet = t.adresse_wallet_usdt || t.adresse_wallet || t.adresse_usdt || null;
             let walletHtml = '';
             if (wallet) {
@@ -370,16 +421,86 @@
         chargerAgentsUI();
       };
 
+      // ===== NOUVEAU : Sauvegarde config + WhatsApp =====
       document.getElementById('form-config').addEventListener('submit', async (e) => {
         e.preventDefault();
         const { error } = await sbClient.from('config').update({
           taux_achat_client: parseFloat(document.getElementById('cfg-taux-achat').value),
           taux_vente_client: parseFloat(document.getElementById('cfg-taux-vente').value),
-          adresse_usdt_reception: document.getElementById('cfg-adresse').value
+          adresse_usdt_reception: document.getElementById('cfg-adresse').value,
+          numero_whatsapp: document.getElementById('cfg-whatsapp').value
         }).eq('id', 1);
         if (error) { alert('Erreur : ' + error.message); return; }
         showToast('Configuration sauvegardée !');
       });
+
+      // ===== NOUVEAU : Gestion des promos =====
+      async function chargerPromosUI() {
+        try {
+          const { data, error } = await sbClient.from('promos').select('*').order('created_at', { ascending: false });
+          if (error) throw error;
+          const c = document.getElementById('liste-promos');
+          if (!data || data.length === 0) { c.innerHTML = '<div class="text-center text-slate-500 text-sm py-4">Aucune bannière.</div>'; return; }
+          c.innerHTML = data.map(p =>
+            '<div class="promo-item">' +
+              '<img src="' + p.image_url + '" alt="Promo">' +
+              '<div class="overlay">' +
+                '<button onclick="window.supprimerPromo(\'' + p.id + '\', \'' + p.image_url + '\')" class="bg-red-500/90 hover:bg-red-500 text-white p-2 rounded-lg" title="Supprimer"><i class="ph ph-trash"></i></button>' +
+              '</div>' +
+            '</div>'
+          ).join('');
+        } catch (e) { console.error(e); c.innerHTML = '<div class="text-center text-red-400 text-sm py-4">Erreur.</div>'; }
+      }
+      window.supprimerPromo = async function (id, imagePath) {
+        if (!confirm('Supprimer cette bannière ?')) return;
+        // 1. Supprimer de la table
+        await sbClient.from('promos').delete().eq('id', id);
+        // 2. Supprimer du bucket storage
+        try {
+          const fileName = imagePath.split('/').pop();
+          await sbClient.storage.from('promos').remove([fileName]);
+        } catch (e) { console.warn('Erreur suppression fichier:', e); }
+        showToast('Bannière supprimée');
+        chargerPromosUI();
+      };
+
+      // Drop zone : clic et glisser-déposer
+      const dropZone = document.getElementById('drop-zone');
+      const inputPromo = document.getElementById('input-promo');
+      dropZone.addEventListener('click', () => inputPromo.click());
+      ['dragenter', 'dragover'].forEach(evt => {
+        dropZone.addEventListener(evt, (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+      });
+      ['dragleave', 'drop'].forEach(evt => {
+        dropZone.addEventListener(evt, (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); });
+      });
+      dropZone.addEventListener('drop', (e) => {
+        if (e.dataTransfer.files.length > 0) uploaderImage(e.dataTransfer.files[0]);
+      });
+      inputPromo.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) uploaderImage(e.target.files[0]);
+      });
+
+      async function uploaderImage(file) {
+        if (!file.type.startsWith('image/')) { alert('Veuillez choisir une image.'); return; }
+        if (file.size > 5 * 1024 * 1024) { alert('Image trop lourde (max 5 Mo).'); return; }
+
+        showToast('Envoi en cours...', 'warning');
+        const fileName = 'promo_' + Date.now() + '_' + file.name.replace(/\s+/g, '_');
+        const { data: uploadData, error: uploadError } = await sbClient.storage
+          .from('promos')
+          .upload(fileName, file, { cacheControl: '3600', upsert: false });
+        if (uploadError) { alert('Erreur upload : ' + uploadError.message); return; }
+
+        const { data: { publicUrl } } = sbClient.storage.from('promos').getPublicUrl(fileName);
+        const { error: insertError } = await sbClient.from('promos').insert([{ image_url: publicUrl }]);
+        if (insertError) { alert('Erreur enregistrement : ' + insertError.message); return; }
+
+        showToast('Bannière ajoutée !');
+        inputPromo.value = '';
+        chargerPromosUI();
+      }
+      // ===== FIN GESTION PROMOS =====
 
       (async () => {
         try {
@@ -388,11 +509,13 @@
             document.getElementById('cfg-taux-achat').value = cfg.taux_achat_client;
             document.getElementById('cfg-taux-vente').value = cfg.taux_vente_client;
             document.getElementById('cfg-adresse').value = cfg.adresse_usdt_reception || '';
+            document.getElementById('cfg-whatsapp').value = cfg.numero_whatsapp || '';
           }
         } catch (e) { console.error(e); }
         rafraichirStats();
         rafraichirTransactions();
         chargerAgentsUI();
+        chargerPromosUI();
         setInterval(() => { rafraichirTransactions(); rafraichirStats(); }, 15000);
       })();
     }
