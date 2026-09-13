@@ -29,10 +29,10 @@
     background-clip: text;
   }
   
-  /* ===== AJOUT PWA : Style de la bannière d'installation ===== */
+  /* ===== AJOUT PWA : Style de la bannière d'installation (EN HAUT) ===== */
   #install-banner {
     position: fixed;
-    bottom: 1rem;
+    top: 80px; /* CHANGÉ : placé en haut, sous le header */
     left: 1rem;
     right: 1rem;
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
@@ -45,11 +45,11 @@
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    animation: slideUp 0.4s ease-out;
+    animation: slideDown 0.4s ease-out; /* CHANGÉ : animation qui descend */
   }
   #install-banner.show { display: flex; }
-  @keyframes slideUp {
-    from { transform: translateY(100%); opacity: 0; }
+  @keyframes slideDown {
+    from { transform: translateY(-100%); opacity: 0; } /* Vient du haut */
     to { transform: translateY(0); opacity: 1; }
   }
   #install-banner button {
@@ -137,10 +137,10 @@
   .carousel-arrow.next { right: 12px; }
   /* ===== FIN CARROUSEL ===== */
 
-  /* ===== NOUVEAU : Bouton WhatsApp flottant ===== */
+  /* ===== NOUVEAU : Bouton WhatsApp flottant (EN BAS, SEUL) ===== */
   #whatsapp-button {
     position: fixed;
-    bottom: 24px;
+    bottom: 24px; /* Reste en bas, tranquille */
     right: 24px;
     width: 60px;
     height: 60px;
