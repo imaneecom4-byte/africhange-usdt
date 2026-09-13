@@ -353,7 +353,10 @@
       window.rejeterTransaction = async function (id) {
         const m = prompt('Motif du rejet :');
         if (m === null) return;
-        const { error } = await sbClient.from('transactions').update({ statut: 'rejete' }).eq('id', id);
+        const { error } = await sbClient.from('transactions').update({ 
+          statut: 'rejete',
+          motif_rejet: m  // ← NOUVEAU : Sauvegarde du motif
+        }).eq('id', id);
         if (error) { alert('Erreur : ' + error.message); return; }
         showToast('Transaction rejetée.', 'error');
         rafraichirTransactions();
