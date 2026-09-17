@@ -21,39 +21,11 @@
   .toast.warning { border-left-color: #f59e0b; }
   .btn-copie { background: rgba(34, 211, 238, 0.15); border: 1px solid rgba(34, 211, 238, 0.4); color: #67e8f9; border-radius: 6px; padding: 2px 6px; font-size: 10px; cursor: pointer; margin-left: 4px; }
   .btn-copie:hover { background: rgba(34, 211, 238, 0.3); color: white; }
-  /* NOUVEAU : drop zone promos */
-  .drop-zone {
-    border: 2px dashed rgba(16, 185, 129, 0.3);
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    background: rgba(16, 185, 129, 0.03);
-  }
-  .drop-zone:hover, .drop-zone.dragover {
-    border-color: #10b981;
-    background: rgba(16, 185, 129, 0.1);
-  }
-  .promo-item {
-    position: relative;
-    border-radius: 0.5rem;
-    overflow: hidden;
-    aspect-ratio: 16/7;
-    background: #0f172a;
-  }
+  .drop-zone { border: 2px dashed rgba(16, 185, 129, 0.3); border-radius: 0.75rem; padding: 1.5rem; text-align: center; cursor: pointer; transition: all 0.2s; background: rgba(16, 185, 129, 0.03); }
+  .drop-zone:hover, .drop-zone.dragover { border-color: #10b981; background: rgba(16, 185, 129, 0.1); }
+  .promo-item { position: relative; border-radius: 0.5rem; overflow: hidden; aspect-ratio: 16/7; background: #0f172a; }
   .promo-item img { width: 100%; height: 100%; object-fit: cover; }
-  .promo-item .overlay {
-    position: absolute; inset: 0;
-    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 50%);
-    display: flex;
-    align-items: flex-end;
-    justify-content: flex-end;
-    padding: 0.5rem;
-    gap: 0.5rem;
-    opacity: 0;
-    transition: opacity 0.2s;
-  }
+  .promo-item .overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 50%); display: flex; align-items: flex-end; justify-content: flex-end; padding: 0.5rem; gap: 0.5rem; opacity: 0; transition: opacity 0.2s; }
   .promo-item:hover .overlay { opacity: 1; }
 </style>
 </head>
@@ -89,24 +61,41 @@
 
   <main class="pt-24 pb-10 px-6 max-w-7xl mx-auto space-y-8">
 
+    <!-- === DASHBOARD CAHIER DE CAISSE === -->
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-2xl font-bold text-white">Tableau de bord</h2>
+        <p class="text-sm text-slate-400" id="periode-label">Période : depuis le —</p>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="voirHistorique()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg border border-slate-700 text-sm flex items-center gap-2">
+          <i class="ph ph-clock-counter-clockwise"></i> Historique
+        </button>
+        <button onclick="demarrerNouvellePeriode()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+          <i class="ph ph-arrows-clockwise"></i> Nouvelle période
+        </button>
+      </div>
+    </div>
+
     <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in">
       <div class="glass-card p-6 rounded-2xl">
-        <p class="text-slate-400 text-sm">Bénéfice Total</p>
+        <p class="text-slate-400 text-sm flex items-center gap-1"><i class="ph ph-currency-circle-dollar"></i> Bénéfice Total</p>
         <h3 id="stat-benef" class="text-3xl font-bold text-white mt-1">— FCFA</h3>
       </div>
       <div class="glass-card p-6 rounded-2xl">
-        <p class="text-slate-400 text-sm">Transactions Validées</p>
-        <h3 id="stat-validees" class="text-3xl font-bold text-white mt-1">—</h3>
+        <p class="text-slate-400 text-sm flex items-center gap-1"><i class="ph ph-arrow-down"></i> Entrées FCFA</p>
+        <h3 id="stat-entrees" class="text-3xl font-bold text-emerald-400 mt-1">— FCFA</h3>
       </div>
       <div class="glass-card p-6 rounded-2xl">
-        <p class="text-slate-400 text-sm">Volume Acheté</p>
-        <h3 id="stat-achat" class="text-3xl font-bold text-white mt-1">— USDT</h3>
+        <p class="text-slate-400 text-sm flex items-center gap-1"><i class="ph ph-arrow-up"></i> Sorties FCFA</p>
+        <h3 id="stat-sorties" class="text-3xl font-bold text-red-400 mt-1">— FCFA</h3>
       </div>
       <div class="glass-card p-6 rounded-2xl">
-        <p class="text-slate-400 text-sm">Volume Vendu</p>
-        <h3 id="stat-vente" class="text-3xl font-bold text-white mt-1">— USDT</h3>
+        <p class="text-slate-400 text-sm flex items-center gap-1"><i class="ph ph-coins"></i> Stock USDT</p>
+        <h3 id="stat-stock" class="text-3xl font-bold text-cyan-400 mt-1">— USDT</h3>
       </div>
     </section>
+    <!-- === FIN DASHBOARD === -->
 
     <div class="flex flex-col lg:flex-row gap-8">
 
@@ -163,15 +152,12 @@
               <label class="text-xs text-slate-400 block mb-1">Adresse USDT</label>
               <input type="text" id="cfg-adresse" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-slate-300 outline-none" placeholder="0x...">
             </div>
-            <!-- NOUVEAU : Champ WhatsApp -->
             <div>
               <label class="text-xs text-slate-400 block mb-1">Numéro WhatsApp (service client)</label>
               <input type="tel" id="cfg-whatsapp" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none" placeholder="+226...">
               <p class="text-[10px] text-slate-500 mt-1">Format : +226XXXXXXXX (avec le +, sans espaces)</p>
             </div>
-            <!-- FIN NOUVEAU -->
 
-            <!-- === DÉBUT AJOUT MODE MAINTENANCE (Rien d'autre n'a été touché) === -->
             <div class="pt-4 border-t border-slate-700 mt-2">
               <div class="flex items-center justify-between mb-3">
                 <label class="text-sm font-bold text-white flex items-center gap-2">
@@ -186,29 +172,24 @@
               <label class="text-xs text-slate-400 block mb-1">Message affiché aux clients</label>
               <textarea id="cfg-maintenance-msg" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white outline-none" rows="2" placeholder="Ex: Réapprovisionnement en cours..."></textarea>
             </div>
-            <!-- === FIN AJOUT MODE MAINTENANCE === -->
 
             <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2 rounded-lg">Sauvegarder</button>
           </form>
         </div>
 
-        <!-- NOUVEAU : Gestion des bannières promo -->
         <div class="glass-card p-6 rounded-2xl">
           <h3 class="font-bold text-white mb-4 flex items-center gap-2"><i class="ph ph-image-square text-pink-400"></i> Bannières Promo</h3>
           <p class="text-xs text-slate-400 mb-3">Glisse une image pour l'ajouter. Elle apparaîtra en carrousel sur l'accueil.</p>
-          
           <label class="drop-zone block mb-4" id="drop-zone">
             <input type="file" id="input-promo" accept="image/*" class="hidden">
             <i class="ph ph-upload-simple text-3xl text-emerald-400 mb-1 block"></i>
             <div class="text-sm text-slate-300 font-medium">Glisse ou clique pour ajouter</div>
             <div class="text-xs text-slate-500 mt-1">PNG, JPG · 16:7 recommandé</div>
           </label>
-
           <div id="liste-promos" class="space-y-3 max-h-[400px] overflow-y-auto pr-2">
             <div class="text-center text-slate-500 py-4">Chargement...</div>
           </div>
         </div>
-        <!-- FIN NOUVEAU -->
 
         <div class="glass-card p-6 rounded-2xl">
           <div class="flex justify-between items-center mb-4">
@@ -226,10 +207,22 @@
     </div>
   </main>
 
+  <!-- Modal Preuve -->
   <div id="modale-preuve" class="hidden fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4" onclick="fermerModale()">
     <div class="relative max-w-3xl w-full">
       <button class="absolute top-4 right-4 text-white hover:text-red-400 text-3xl">&times;</button>
       <img id="modale-image" src="" alt="Preuve" class="w-full h-auto rounded-xl border border-white/10" />
+    </div>
+  </div>
+
+  <!-- === MODAL HISTORIQUE === -->
+  <div id="modale-historique" class="hidden fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4">
+    <div class="relative max-w-4xl w-full bg-slate-900 rounded-2xl p-6 max-h-[80vh] overflow-y-auto">
+      <button class="absolute top-4 right-4 text-white hover:text-red-400 text-3xl" onclick="fermerHistorique()">&times;</button>
+      <h3 class="text-2xl font-bold text-white mb-4 flex items-center gap-2"><i class="ph ph-clock-counter-clockwise text-emerald-400"></i> Historique des périodes</h3>
+      <div id="liste-historique" class="space-y-3">
+        <div class="text-center text-slate-500 py-8">Chargement...</div>
+      </div>
     </div>
   </div>
 
@@ -279,17 +272,44 @@
         document.body.removeChild(ta);
       }
 
+      // === CALCUL CAHIER DE CAISSE ===
       async function rafraichirStats() {
         try {
-          const { data, error } = await sbClient.from('transactions').select('type_transaction, montant_usdt').eq('statut', 'valide');
+          const { data: cfg } = await sbClient.from('config').select('taux_achat_client, taux_vente_client, periode_debut').eq('id', 1).single();
+          const tauxAchat = parseFloat(cfg?.taux_achat_client) || 650;
+          const tauxVente = parseFloat(cfg?.taux_vente_client) || 550;
+          const periodeDebut = cfg?.periode_debut || '2020-01-01T00:00:00Z';
+          
+          document.getElementById('periode-label').textContent = 'Période : depuis le ' + new Date(periodeDebut).toLocaleDateString('fr-FR');
+          
+          const { data, error } = await sbClient.from('transactions')
+            .select('type_transaction, montant_usdt, montant_fcfa, benefice_estime, valide_le')
+            .eq('statut', 'valide')
+            .gte('valide_le', periodeDebut);
+          
           if (error) throw error;
-          const benef = data.reduce((s, t) => s + (parseFloat(t.benefice_estime) || 0), 0);
-          const achat = data.filter(t => t.type_transaction === 'achat').reduce((s, t) => s + (parseFloat(t.montant_usdt) || 0), 0);
-          const vente = data.filter(t => t.type_transaction === 'vente').reduce((s, t) => s + (parseFloat(t.montant_usdt) || 0), 0);
-          document.getElementById('stat-benef').textContent = benef.toLocaleString('fr-FR') + ' FCFA';
-          document.getElementById('stat-validees').textContent = data.length;
-          document.getElementById('stat-achat').textContent = achat.toFixed(2) + ' USDT';
-          document.getElementById('stat-vente').textContent = vente.toFixed(2) + ' USDT';
+          
+          let entrees = 0, sorties = 0, benefice = 0, stockUSDT = 0;
+          
+          data.forEach(t => {
+            const usdt = parseFloat(t.montant_usdt) || 0;
+            const fcfa = parseFloat(t.montant_fcfa) || 0;
+            
+            if (t.type_transaction === 'achat') {
+              entrees += fcfa;
+              stockUSDT -= usdt;
+              benefice += (parseFloat(t.benefice_estime) || (usdt * (tauxAchat - tauxVente)));
+            } else {
+              sorties += fcfa;
+              stockUSDT += usdt;
+              benefice += (parseFloat(t.benefice_estime) || (usdt * (tauxAchat - tauxVente)));
+            }
+          });
+          
+          document.getElementById('stat-benef').textContent = benefice.toLocaleString('fr-FR') + ' FCFA';
+          document.getElementById('stat-entrees').textContent = entrees.toLocaleString('fr-FR') + ' FCFA';
+          document.getElementById('stat-sorties').textContent = sorties.toLocaleString('fr-FR') + ' FCFA';
+          document.getElementById('stat-stock').textContent = stockUSDT.toFixed(2) + ' USDT';
         } catch (e) { console.error(e); }
       }
 
@@ -361,24 +381,150 @@
         }
       }
 
+      // === VALIDATION AVEC DATE ===
       window.validerTransaction = async function (id) {
         if (!confirm('Confirmer la validation ?')) return;
-        const { error } = await sbClient.from('transactions').update({ statut: 'valide' }).eq('id', id);
-        if (error) { alert('Erreur : ' + error.message); return; }
-        showToast('Transaction validée !');
-        rafraichirTransactions(); rafraichirStats();
+        try {
+          const { data: tx } = await sbClient.from('transactions').select('montant_usdt, type_transaction').eq('id', id).single();
+          const { data: cfg } = await sbClient.from('config').select('taux_achat_client, taux_vente_client').eq('id', 1).single();
+          const tauxAchat = parseFloat(cfg?.taux_achat_client) || 650;
+          const tauxVente = parseFloat(cfg?.taux_vente_client) || 550;
+          const usdt = parseFloat(tx?.montant_usdt) || 0;
+          const benef = usdt * (tauxAchat - tauxVente);
+          
+          const { error } = await sbClient.from('transactions').update({ 
+            statut: 'valide', 
+            benefice_estime: benef,
+            valide_le: new Date().toISOString()
+          }).eq('id', id);
+          
+          if (error) { alert('Erreur : ' + error.message); return; }
+          showToast('Transaction validée ! Bénéfice : ' + benef.toLocaleString('fr-FR') + ' FCFA');
+          rafraichirTransactions(); 
+          rafraichirStats();
+        } catch (e) { alert('Erreur : ' + e.message); }
       };
+
       window.rejeterTransaction = async function (id) {
         const m = prompt('Motif du rejet :');
         if (m === null) return;
         const { error } = await sbClient.from('transactions').update({ 
           statut: 'rejete',
-          motif_rejet: m  // ← NOUVEAU : Sauvegarde du motif
+          motif_rejet: m
         }).eq('id', id);
         if (error) { alert('Erreur : ' + error.message); return; }
         showToast('Transaction rejetée.', 'error');
         rafraichirTransactions();
       };
+
+      // === NOUVELLE PÉRIODE ===
+      window.demarrerNouvellePeriode = async function () {
+        if (!confirm('Démarrer une nouvelle période ? Les chiffres actuels seront archivés et les compteurs repartiront de zéro.')) return;
+        
+        try {
+          const { data: cfg } = await sbClient.from('config').select('periode_debut').eq('id', 1).single();
+          const anciennePeriode = cfg?.periode_debut || '2020-01-01T00:00:00Z';
+          
+          const { data: transactions } = await sbClient.from('transactions')
+            .select('type_transaction, montant_usdt, montant_fcfa, benefice_estime')
+            .eq('statut', 'valide')
+            .gte('valide_le', anciennePeriode);
+          
+          let entrees = 0, sorties = 0, benefice = 0, volAchat = 0, volVente = 0;
+          (transactions || []).forEach(t => {
+            const usdt = parseFloat(t.montant_usdt) || 0;
+            const fcfa = parseFloat(t.montant_fcfa) || 0;
+            const benef = parseFloat(t.benefice_estime) || 0;
+            
+            if (t.type_transaction === 'achat') {
+              entrees += fcfa;
+              volAchat += usdt;
+            } else {
+              sorties += fcfa;
+              volVente += usdt;
+            }
+            benefice += benef;
+          });
+          
+          await sbClient.from('periodes').insert([{
+            debut: anciennePeriode,
+            fin: new Date().toISOString(),
+            benefice: benefice,
+            entrees_fcfa: entrees,
+            sorties_fcfa: sorties,
+            volume_achat_usdt: volAchat,
+            volume_vente_usdt: volVente,
+            nb_transactions: (transactions || []).length
+          }]);
+          
+          const nouvelleDate = new Date().toISOString();
+          await sbClient.from('config').update({ periode_debut: nouvelleDate }).eq('id', 1);
+          
+          showToast('Nouvelle période démarrée !');
+          rafraichirStats();
+        } catch (e) { alert('Erreur : ' + e.message); }
+      };
+
+      // === HISTORIQUE ===
+      window.voirHistorique = async function () {
+        document.getElementById('modale-historique').classList.remove('hidden');
+        const liste = document.getElementById('liste-historique');
+        liste.innerHTML = '<div class="text-center text-slate-500 py-8">Chargement...</div>';
+        
+        try {
+          const { data, error } = await sbClient.from('periodes').select('*').order('fin', { ascending: false });
+          if (error) throw error;
+          
+          if (!data || data.length === 0) {
+            liste.innerHTML = '<div class="text-center text-slate-500 py-8">Aucun historique pour l\'instant.</div>';
+            return;
+          }
+          
+          liste.innerHTML = data.map(p => {
+            const debut = new Date(p.debut).toLocaleDateString('fr-FR');
+            const fin = new Date(p.fin).toLocaleDateString('fr-FR');
+            return `
+              <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+                <div class="flex justify-between items-start mb-3">
+                  <div>
+                    <div class="text-sm font-bold text-white">${debut} → ${fin}</div>
+                    <div class="text-xs text-slate-400">${p.nb_transactions} transactions</div>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-lg font-bold text-emerald-400">${parseFloat(p.benefice).toLocaleString('fr-FR')} FCFA</div>
+                    <div class="text-xs text-slate-400">Bénéfice</div>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                  <div class="bg-slate-900/50 rounded p-2">
+                    <div class="text-slate-400">Entrées</div>
+                    <div class="text-emerald-300 font-semibold">${parseFloat(p.entrees_fcfa).toLocaleString('fr-FR')} F</div>
+                  </div>
+                  <div class="bg-slate-900/50 rounded p-2">
+                    <div class="text-slate-400">Sorties</div>
+                    <div class="text-red-300 font-semibold">${parseFloat(p.sorties_fcfa).toLocaleString('fr-FR')} F</div>
+                  </div>
+                  <div class="bg-slate-900/50 rounded p-2">
+                    <div class="text-slate-400">Achat</div>
+                    <div class="text-cyan-300 font-semibold">${parseFloat(p.volume_achat_usdt).toFixed(2)} USDT</div>
+                  </div>
+                  <div class="bg-slate-900/50 rounded p-2">
+                    <div class="text-slate-400">Vente</div>
+                    <div class="text-amber-300 font-semibold">${parseFloat(p.volume_vente_usdt).toFixed(2)} USDT</div>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        } catch (e) {
+          liste.innerHTML = '<div class="text-center text-red-400 py-8">Erreur de chargement.</div>';
+        }
+      };
+
+      window.fermerHistorique = function () {
+        document.getElementById('modale-historique').classList.add('hidden');
+      };
+
       window.ouvrirModale = function (url) {
         document.getElementById('modale-image').src = url;
         document.getElementById('modale-preuve').classList.remove('hidden');
@@ -442,7 +588,6 @@
         chargerAgentsUI();
       };
 
-      // ===== NOUVEAU : Sauvegarde config + WhatsApp + Maintenance =====
       document.getElementById('form-config').addEventListener('submit', async (e) => {
         e.preventDefault();
         const { error } = await sbClient.from('config').update({
@@ -450,16 +595,13 @@
           taux_vente_client: parseFloat(document.getElementById('cfg-taux-vente').value),
           adresse_usdt_reception: document.getElementById('cfg-adresse').value,
           numero_whatsapp: document.getElementById('cfg-whatsapp').value,
-          // === DÉBUT AJOUT MAINTENANCE ===
           maintenance_mode: document.getElementById('cfg-maintenance').checked,
           maintenance_message: document.getElementById('cfg-maintenance-msg').value
-          // === FIN AJOUT MAINTENANCE ===
         }).eq('id', 1);
         if (error) { alert('Erreur : ' + error.message); return; }
         showToast('Configuration sauvegardée !');
       });
 
-      // ===== NOUVEAU : Gestion des promos =====
       async function chargerPromosUI() {
         try {
           const { data, error } = await sbClient.from('promos').select('*').order('created_at', { ascending: false });
@@ -478,9 +620,7 @@
       }
       window.supprimerPromo = async function (id, imagePath) {
         if (!confirm('Supprimer cette bannière ?')) return;
-        // 1. Supprimer de la table
         await sbClient.from('promos').delete().eq('id', id);
-        // 2. Supprimer du bucket storage
         try {
           const fileName = imagePath.split('/').pop();
           await sbClient.storage.from('promos').remove([fileName]);
@@ -489,7 +629,6 @@
         chargerPromosUI();
       };
 
-      // Drop zone : clic et glisser-déposer
       const dropZone = document.getElementById('drop-zone');
       const inputPromo = document.getElementById('input-promo');
       dropZone.addEventListener('click', () => inputPromo.click());
@@ -509,23 +648,17 @@
       async function uploaderImage(file) {
         if (!file.type.startsWith('image/')) { alert('Veuillez choisir une image.'); return; }
         if (file.size > 5 * 1024 * 1024) { alert('Image trop lourde (max 5 Mo).'); return; }
-
         showToast('Envoi en cours...', 'warning');
         const fileName = 'promo_' + Date.now() + '_' + file.name.replace(/\s+/g, '_');
-        const { data: uploadData, error: uploadError } = await sbClient.storage
-          .from('promos')
-          .upload(fileName, file, { cacheControl: '3600', upsert: false });
+        const { data: uploadData, error: uploadError } = await sbClient.storage.from('promos').upload(fileName, file, { cacheControl: '3600', upsert: false });
         if (uploadError) { alert('Erreur upload : ' + uploadError.message); return; }
-
         const { data: { publicUrl } } = sbClient.storage.from('promos').getPublicUrl(fileName);
         const { error: insertError } = await sbClient.from('promos').insert([{ image_url: publicUrl }]);
         if (insertError) { alert('Erreur enregistrement : ' + insertError.message); return; }
-
         showToast('Bannière ajoutée !');
         inputPromo.value = '';
         chargerPromosUI();
       }
-      // ===== FIN GESTION PROMOS =====
 
       (async () => {
         try {
@@ -535,10 +668,8 @@
             document.getElementById('cfg-taux-vente').value = cfg.taux_vente_client;
             document.getElementById('cfg-adresse').value = cfg.adresse_usdt_reception || '';
             document.getElementById('cfg-whatsapp').value = cfg.numero_whatsapp || '';
-            // === DÉBUT AJOUT MAINTENANCE ===
             document.getElementById('cfg-maintenance').checked = cfg.maintenance_mode || false;
             document.getElementById('cfg-maintenance-msg').value = cfg.maintenance_message || '';
-            // === FIN AJOUT MAINTENANCE ===
           }
         } catch (e) { console.error(e); }
         rafraichirStats();
