@@ -1,52 +1,69 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AfriChange - Maintenance</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Outfit', sans-serif; }
-        @keyframes pulse-slow { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-        .animate-pulse-slow { animation: pulse-slow 3s infinite; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AfriChange - Maintenance</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Outfit', sans-serif; }
+  @keyframes spinSlow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .spin-slow { display: inline-block; animation: spinSlow 2.5s linear infinite; }
+</style>
 </head>
 <body class="bg-[#020617] text-white min-h-screen flex items-center justify-center p-6">
 
-    <div class="text-center max-w-lg w-full">
-        <div class="text-7xl mb-8 animate-pulse-slow"></div>
-        
-        <h1 class="text-3xl md:text-4xl font-extrabold text-red-500 mb-6 uppercase tracking-wider">
-            Service Suspendu
-        </h1>
-        
-        <p id="msg-maintenance" class="text-slate-300 text-lg mb-10 leading-relaxed px-4">
-            Nous procédons actuellement à un réapprovisionnement de nos liquidités. Les transactions sont temporairement suspendues. Merci de revenir dans quelques heures.
-        </p>
-        
-        <div class="inline-flex items-center gap-2 px-6 py-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-300 text-sm font-semibold">
-            <span>⏳</span> Accès au site bloqué jusqu'à nouvel ordre.
-        </div>
+  <div class="text-center max-w-lg w-full">
+    <div class="text-7xl mb-8 animate-pulse">🚧</div>
+    <h1 class="text-3xl md:text-4xl font-extrabold text-red-500 mb-6 uppercase tracking-wider">Service Suspendu</h1>
+    <p id="msg-maintenance" class="text-slate-300 text-lg mb-10 leading-relaxed px-4">
+      Nous procédons actuellement à un réapprovisionnement de nos liquidités. Les transactions sont temporairement suspendues. Merci de revenir dans quelques heures.
+    </p>
+    <div class="inline-flex items-center gap-2 px-6 py-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-300 text-sm font-semibold mb-8">
+      <span>⏳</span> Accès au site bloqué jusqu'à nouvel ordre.
     </div>
 
-    <script>
-        // Récupérer le message personnalisé depuis la base de données
-        (async () => {
-            try {
-                const sb = window.supabase.createClient(
-                    'https://qlsetlqyejwrhztbesto.supabase.co', 
-                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4'
-                );
-                const { data } = await sb.from('config').select('maintenance_message').eq('id', 1).single();
-                if (data && data.maintenance_message) {
-                    document.getElementById('msg-maintenance').textContent = data.maintenance_message;
-                }
-            } catch(e) { 
-                console.log('Utilisation du message par défaut'); 
-            }
-        })();
-    </script>
+    <!-- NOUVEAU : indicateur de retour automatique -->
+    <div class="flex items-center justify-center gap-3 text-slate-500 text-xs leading-relaxed">
+      <span class="spin-slow text-base">🔄</span>
+      <span class="text-left">Vérification automatique toutes les 10 secondes.<br>Dès la fin de la maintenance, cette page vous ramènera<br>tout seul sur l'accueil — inutile de recliquer.</span>
+    </div>
+    <a href="/" class="inline-block mt-6 text-slate-600 hover:text-slate-400 text-xs underline">Essayer d'aller à l'accueil maintenant</a>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const sb = window.supabase.createClient(
+      'https://qlsetlqyejwrhztbesto.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4'
+    );
+
+    async function verifierMaintenance() {
+      try {
+        const { data } = await sb.from('config')
+          .select('maintenance_mode, maintenance_message')
+          .eq('id', 1).single();
+        if (!data) return;
+
+        // Maintenance désactivée → retour AUTOMATIQUE à l'accueil
+        if (data.maintenance_mode === false) {
+          window.location.replace('/');
+          return;
+        }
+
+        // Sinon on affiche le message à jour
+        if (data.maintenance_message) {
+          document.getElementById('msg-maintenance').textContent = data.maintenance_message;
+        }
+      } catch (e) {
+        // Pas de réseau : on réessaiera dans 10 secondes
+        console.log('Vérification impossible, nouvel essai dans 10 s');
+      }
+    }
+
+    verifierMaintenance();                      // dès l'ouverture de la page
+    setInterval(verifierMaintenance, 10000);    // puis toutes les 10 secondes
+  </script>
 </body>
 </html>
