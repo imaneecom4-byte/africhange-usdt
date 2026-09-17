@@ -170,6 +170,24 @@
               <p class="text-[10px] text-slate-500 mt-1">Format : +226XXXXXXXX (avec le +, sans espaces)</p>
             </div>
             <!-- FIN NOUVEAU -->
+
+            <!-- === DÉBUT AJOUT MODE MAINTENANCE (Rien d'autre n'a été touché) === -->
+            <div class="pt-4 border-t border-slate-700 mt-2">
+              <div class="flex items-center justify-between mb-3">
+                <label class="text-sm font-bold text-white flex items-center gap-2">
+                  <i class="ph ph-wrench text-red-400"></i> Mode Maintenance
+                </label>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="cfg-maintenance" class="sr-only peer">
+                  <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                </label>
+              </div>
+              <p class="text-xs text-slate-400 mb-2">Active ce mode pour bloquer l'accès au site aux clients.</p>
+              <label class="text-xs text-slate-400 block mb-1">Message affiché aux clients</label>
+              <textarea id="cfg-maintenance-msg" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white outline-none" rows="2" placeholder="Ex: Réapprovisionnement en cours..."></textarea>
+            </div>
+            <!-- === FIN AJOUT MODE MAINTENANCE === -->
+
             <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2 rounded-lg">Sauvegarder</button>
           </form>
         </div>
@@ -424,14 +442,18 @@
         chargerAgentsUI();
       };
 
-      // ===== NOUVEAU : Sauvegarde config + WhatsApp =====
+      // ===== NOUVEAU : Sauvegarde config + WhatsApp + Maintenance =====
       document.getElementById('form-config').addEventListener('submit', async (e) => {
         e.preventDefault();
         const { error } = await sbClient.from('config').update({
           taux_achat_client: parseFloat(document.getElementById('cfg-taux-achat').value),
           taux_vente_client: parseFloat(document.getElementById('cfg-taux-vente').value),
           adresse_usdt_reception: document.getElementById('cfg-adresse').value,
-          numero_whatsapp: document.getElementById('cfg-whatsapp').value
+          numero_whatsapp: document.getElementById('cfg-whatsapp').value,
+          // === DÉBUT AJOUT MAINTENANCE ===
+          maintenance_mode: document.getElementById('cfg-maintenance').checked,
+          maintenance_message: document.getElementById('cfg-maintenance-msg').value
+          // === FIN AJOUT MAINTENANCE ===
         }).eq('id', 1);
         if (error) { alert('Erreur : ' + error.message); return; }
         showToast('Configuration sauvegardée !');
@@ -513,6 +535,10 @@
             document.getElementById('cfg-taux-vente').value = cfg.taux_vente_client;
             document.getElementById('cfg-adresse').value = cfg.adresse_usdt_reception || '';
             document.getElementById('cfg-whatsapp').value = cfg.numero_whatsapp || '';
+            // === DÉBUT AJOUT MAINTENANCE ===
+            document.getElementById('cfg-maintenance').checked = cfg.maintenance_mode || false;
+            document.getElementById('cfg-maintenance-msg').value = cfg.maintenance_message || '';
+            // === FIN AJOUT MAINTENANCE ===
           }
         } catch (e) { console.error(e); }
         rafraichirStats();
