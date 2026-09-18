@@ -36,11 +36,9 @@
 
       <div id="global-error" class="hidden bg-red-900/50 border border-red-500 text-red-200 p-4 rounded-lg mb-6 text-sm"></div>
 
-      <!-- === DÉBUT AJOUT VIP : Carte de statut client === -->
       <div id="vip-card" class="hidden mb-6 rounded-xl p-4 border">
         <div id="vip-card-content"></div>
       </div>
-      <!-- === FIN AJOUT VIP === -->
 
       <form id="form-achat-step1" class="space-y-6">
         
@@ -133,13 +131,12 @@
     let agentsData = [];
     let currentPrefix = "";
 
-    // === LOGOS OFFICIELS (PNG uploadés à la racine de GitHub) ===
     const operatorLogos = {
       'Orange Money': `<img class="operator-logo" src="/orange-money.png" alt="Orange Money">`,
       'Moov Money': `<img class="operator-logo" src="/moov-money.png" alt="Moov Money">`,
       'MTN Money': `<img class="operator-logo" src="/mtn-money.png" alt="MTN Money">`,
       'Wave': `<img class="operator-logo" src="/wave.png" alt="Wave">`,
-      'Mixx By Yas': `<img class="operator-logo" src="/mixx-yas.png" alt="Mixx by Yas">`,
+      'Mixx By Yas': `<img class="operator-logo" src="/mixx-yas.png?v=2" alt="Mixx by Yas">`,
       'Celtiis': `<img class="operator-logo" src="/celtiis.png" alt="Celtiis">`
     };
 
@@ -169,10 +166,8 @@
           vipSeuil = parseFloat(cfg.vip_seuil_usdt) || 100;
           document.getElementById('taux-valeur').textContent = `${currentRate} FCFA/USDT`;
         }
-
         const { data: agt } = await supabaseClient.from('agents').select('*').eq('actif', true);
         if (agt && agt.length > 0) agentsData = agt;
-
       } catch (err) {
         console.error("❌ Erreur chargement:", err);
       }
@@ -181,71 +176,37 @@
     async function verifierStatutVip() {
       const num1 = document.getElementById('numero-telephone').value.trim();
       const num2 = document.getElementById('confirm-telephone').value.trim();
-      
       if (!num1 || num1 !== num2 || !currentPrefix) return;
-      
       const fullNumber = currentPrefix + num1;
       const vipCard = document.getElementById('vip-card');
       const content = document.getElementById('vip-card-content');
-      
       try {
         const { data: transactions } = await supabaseClient
-          .from('transactions')
-          .select('montant_usdt')
-          .eq('numero_telephone', fullNumber)
-          .eq('statut', 'valide');
-        
+          .from('transactions').select('montant_usdt')
+          .eq('numero_telephone', fullNumber).eq('statut', 'valide');
         clientTotalUsdt = (transactions || []).reduce((sum, t) => sum + (parseFloat(t.montant_usdt) || 0), 0);
         clientIsVip = clientTotalUsdt >= vipSeuil;
-        
         const tauxApplique = clientIsVip ? vipRate : currentRate;
         document.getElementById('taux-valeur').textContent = `${tauxApplique} FCFA/USDT`;
-        
         const montantUsdt = parseFloat(document.getElementById('montant-usdt').value);
         if (montantUsdt > 0) {
           const total = montantUsdt * tauxApplique;
           document.getElementById('montant-fcfa').textContent = `Vous paierez : ${total.toLocaleString('fr-FR')} FCFA`;
         }
-        
         if (clientIsVip) {
           vipCard.className = 'mb-6 rounded-xl p-4 border bg-amber-500/10 border-amber-500/30';
-          content.innerHTML = `
-            <div class="flex items-center gap-3">
-              <div class="text-3xl">⭐</div>
-              <div>
-                <div class="font-bold text-amber-300">Cliente VIP</div>
-                <div class="text-xs text-amber-200/80 mt-1">
-                  Vous avez échangé <strong>${clientTotalUsdt.toFixed(2)} USDT</strong> chez nous.
-                  <br>Vous achetez à <strong>${vipRate} FCFA</strong> au lieu de ${currentRate} FCFA !
-                </div>
-              </div>
-            </div>
-          `;
+          content.innerHTML = `<div class="flex items-center gap-3"><div class="text-3xl">⭐</div><div><div class="font-bold text-amber-300">Cliente VIP</div><div class="text-xs text-amber-200/80 mt-1">Vous avez échangé <strong>${clientTotalUsdt.toFixed(2)} USDT</strong> chez nous.<br>Vous achetez à <strong>${vipRate} FCFA</strong> au lieu de ${currentRate} FCFA !</div></div></div>`;
           vipCard.classList.remove('hidden');
         } else if (clientTotalUsdt > 0) {
           const restant = vipSeuil - clientTotalUsdt;
           const pourcent = Math.min((clientTotalUsdt / vipSeuil) * 100, 100);
           vipCard.className = 'mb-6 rounded-xl p-4 border bg-emerald-500/10 border-emerald-500/30';
-          content.innerHTML = `
-            <div class="flex items-start gap-3">
-              <div class="text-3xl">🎁</div>
-              <div class="flex-1">
-                <div class="font-bold text-emerald-300 mb-2">Plus que ${restant.toFixed(2)} USDT pour devenir VIP !</div>
-                <div class="w-full bg-slate-700 rounded-full h-2 mb-1">
-                  <div class="bg-gradient-to-r from-emerald-400 to-emerald-600 h-2 rounded-full" style="width: ${pourcent}%"></div>
-                </div>
-                <div class="text-xs text-slate-400">${clientTotalUsdt.toFixed(2)} / ${vipSeuil} USDT échangés</div>
-              </div>
-            </div>
-          `;
+          content.innerHTML = `<div class="flex items-start gap-3"><div class="text-3xl">🎁</div><div class="flex-1"><div class="font-bold text-emerald-300 mb-2">Plus que ${restant.toFixed(2)} USDT pour devenir VIP !</div><div class="w-full bg-slate-700 rounded-full h-2 mb-1"><div class="bg-gradient-to-r from-emerald-400 to-emerald-600 h-2 rounded-full" style="width: ${pourcent}%"></div></div><div class="text-xs text-slate-400">${clientTotalUsdt.toFixed(2)} / ${vipSeuil} USDT échangés</div></div></div>`;
           vipCard.classList.remove('hidden');
         } else {
           vipCard.classList.add('hidden');
         }
-        
-      } catch (e) {
-        console.error('Erreur vérification VIP:', e);
-      }
+      } catch (e) { console.error('Erreur vérification VIP:', e); }
     }
 
     function handleCountryChange() {
@@ -254,29 +215,14 @@
       const prefix = option.getAttribute('data-prefix') || "";
       const pays = option.value;
       currentPrefix = prefix;
-
       const inputs = ['numero-telephone', 'confirm-telephone'];
       const badges = ['phone-prefix', 'confirm-prefix'];
-
       if (prefix) {
-        inputs.forEach(id => {
-          const el = document.getElementById(id);
-          el.disabled = false;
-          el.placeholder = prefix + " XX XX XX XX";
-          el.focus();
-        });
-        badges.forEach(id => {
-          const el = document.getElementById(id);
-          el.textContent = prefix;
-          el.classList.remove('hidden');
-        });
+        inputs.forEach(id => { const el = document.getElementById(id); el.disabled = false; el.placeholder = prefix + " XX XX XX XX"; el.focus(); });
+        badges.forEach(id => { const el = document.getElementById(id); el.textContent = prefix; el.classList.remove('hidden'); });
         showOperatorsForCountry(pays);
       } else {
-        inputs.forEach(id => {
-          const el = document.getElementById(id);
-          el.disabled = true;
-          el.value = '';
-        });
+        inputs.forEach(id => { const el = document.getElementById(id); el.disabled = true; el.value = ''; });
         badges.forEach(id => document.getElementById(id).classList.add('hidden'));
         document.getElementById('operateurs-container').classList.add('hidden');
         document.getElementById('vip-card').classList.add('hidden');
@@ -297,15 +243,7 @@
       }
       liste.innerHTML = agentsPays.map(agent => {
         const logoSVG = operatorLogos[agent.operateur] || operatorLogos['Orange Money'];
-        return `
-          <div class="operator-card bg-slate-900 border border-slate-700 rounded-xl p-3 cursor-pointer hover:border-emerald-500 transition text-center" 
-               onclick="selectionnerOperateur('${agent.operateur}', this)">
-            <div class="flex flex-col items-center">
-              <div class="mb-2">${logoSVG}</div>
-              <p class="font-medium text-white text-xs">${agent.operateur}</p>
-            </div>
-          </div>
-        `;
+        return `<div class="operator-card bg-slate-900 border border-slate-700 rounded-xl p-3 cursor-pointer hover:border-emerald-500 transition text-center" onclick="selectionnerOperateur('${agent.operateur}', this)"><div class="flex flex-col items-center"><div class="mb-2">${logoSVG}</div><p class="font-medium text-white text-xs">${agent.operateur}</p></div></div>`;
       }).join('');
       container.classList.remove('hidden');
     }
@@ -315,17 +253,9 @@
       const num2 = document.getElementById('confirm-telephone').value.trim();
       const matchMsg = document.getElementById('phone-match-msg');
       const mismatchMsg = document.getElementById('phone-mismatch-msg');
-
       if (num1 && num2) {
-        if (num1 === num2) {
-          matchMsg.classList.remove('hidden');
-          mismatchMsg.classList.add('hidden');
-          return true;
-        } else {
-          matchMsg.classList.add('hidden');
-          mismatchMsg.classList.remove('hidden');
-          return false;
-        }
+        if (num1 === num2) { matchMsg.classList.remove('hidden'); mismatchMsg.classList.add('hidden'); return true; }
+        else { matchMsg.classList.add('hidden'); mismatchMsg.classList.remove('hidden'); return false; }
       }
       matchMsg.classList.add('hidden');
       mismatchMsg.classList.add('hidden');
@@ -337,17 +267,9 @@
       const addr2 = document.getElementById('confirm-wallet').value.trim();
       const matchMsg = document.getElementById('wallet-match-msg');
       const mismatchMsg = document.getElementById('wallet-mismatch-msg');
-
       if (addr1 && addr2) {
-        if (addr1 === addr2) {
-          matchMsg.classList.remove('hidden');
-          mismatchMsg.classList.add('hidden');
-          return true;
-        } else {
-          matchMsg.classList.add('hidden');
-          mismatchMsg.classList.remove('hidden');
-          return false;
-        }
+        if (addr1 === addr2) { matchMsg.classList.remove('hidden'); mismatchMsg.classList.add('hidden'); return true; }
+        else { matchMsg.classList.add('hidden'); mismatchMsg.classList.remove('hidden'); return false; }
       }
       matchMsg.classList.add('hidden');
       mismatchMsg.classList.add('hidden');
@@ -361,48 +283,29 @@
       const operateurOk = document.getElementById('operateur-selectionne').value !== "";
       const paysOk = document.getElementById('pays').value !== "";
       const montantOk = parseFloat(document.getElementById('montant-usdt').value) > 0;
-
-      if (phoneOk && walletOk && operateurOk && paysOk && montantOk) {
-        btn.disabled = false;
-      } else {
-        btn.disabled = true;
-      }
+      if (phoneOk && walletOk && operateurOk && paysOk && montantOk) btn.disabled = false;
+      else btn.disabled = true;
     }
 
     ['numero-telephone', 'confirm-telephone'].forEach(id => {
       document.getElementById(id).addEventListener('input', () => {
         validateForm();
-        if (validatePhoneMatch()) {
-          verifierStatutVip();
-        } else {
-          document.getElementById('vip-card').classList.add('hidden');
-          clientIsVip = false;
-          clientTotalUsdt = 0;
-          document.getElementById('taux-valeur').textContent = `${currentRate} FCFA/USDT`;
-        }
+        if (validatePhoneMatch()) verifierStatutVip();
+        else { document.getElementById('vip-card').classList.add('hidden'); clientIsVip = false; clientTotalUsdt = 0; document.getElementById('taux-valeur').textContent = `${currentRate} FCFA/USDT`; }
       });
     });
-    
-    ['adresse-wallet', 'confirm-wallet'].forEach(id => {
-      document.getElementById(id).addEventListener('input', validateForm);
-    });
-    
+    ['adresse-wallet', 'confirm-wallet'].forEach(id => { document.getElementById(id).addEventListener('input', validateForm); });
     document.getElementById('montant-usdt').addEventListener('input', function() {
       const taux = clientIsVip ? vipRate : currentRate;
       if (parseFloat(this.value) > 0) {
         const total = this.value * taux;
         document.getElementById('montant-fcfa').textContent = `Vous paierez : ${total.toLocaleString('fr-FR')} FCFA`;
-      } else {
-        document.getElementById('montant-fcfa').textContent = '';
-      }
+      } else { document.getElementById('montant-fcfa').textContent = ''; }
       validateForm();
     });
 
     function selectionnerOperateur(op, el) {
-      document.querySelectorAll('.operator-card').forEach(c => {
-        c.classList.remove('border-emerald-500', 'bg-slate-800');
-        c.classList.add('border-slate-700', 'bg-slate-900');
-      });
+      document.querySelectorAll('.operator-card').forEach(c => { c.classList.remove('border-emerald-500', 'bg-slate-800'); c.classList.add('border-slate-700', 'bg-slate-900'); });
       el.classList.remove('border-slate-700', 'bg-slate-900');
       el.classList.add('border-emerald-500', 'bg-slate-800');
       document.getElementById('operateur-selectionne').value = op;
@@ -411,25 +314,17 @@
 
     document.getElementById('form-achat-step1').addEventListener('submit', async function(e) {
       e.preventDefault();
-      
-      if (!validatePhoneMatch() || !validateWallet()) {
-        alert("Veuillez corriger les erreurs de confirmation avant de continuer.");
-        return;
-      }
-
+      if (!validatePhoneMatch() || !validateWallet()) { alert("Veuillez corriger les erreurs de confirmation avant de continuer."); return; }
       const btn = document.getElementById('btn-suivant');
       const loader = document.getElementById('btn-loader');
       const txt = document.getElementById('btn-text');
-      
       btn.disabled = true;
       txt.classList.add('opacity-0');
       loader.classList.remove('hidden');
-
       const fullNumber = currentPrefix + document.getElementById('numero-telephone').value.trim();
       const montantUSDT = parseFloat(document.getElementById('montant-usdt').value);
       const tauxApplique = clientIsVip ? vipRate : currentRate;
       const montantFCFA = montantUSDT * tauxApplique;
-
       const transactionData = {
         prenom: document.getElementById('prenom').value,
         nom: document.getElementById('nom').value,
@@ -443,7 +338,6 @@
         statut: 'en_attente',
         taux_applique: tauxApplique
       };
-
       try {
         const { data, error } = await supabaseClient.from('transactions').insert([transactionData]).select().single();
         if (error) throw error;
