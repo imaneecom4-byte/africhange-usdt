@@ -9,10 +9,7 @@
 <link rel="stylesheet" href="/css/style.css" />
 <style>
   .vip-card { animation: fadeInUp 0.5s ease-out; }
-  @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-5">
@@ -21,13 +18,9 @@
     <div class="etapes mb-6" id="barre-etapes"></div>
 
     <div class="card p-10 flex flex-col items-center text-center" style="box-shadow: 0 0 0 1px rgba(245,185,66,0.15), 0 0 40px -8px #f5b942;">
-      <div class="cercle-succes mb-6" style="background:rgba(245,185,66,0.15); box-shadow:0 0 50px -10px #f5b942;">
-        <span class="text-4xl">✓</span>
-      </div>
+      <div class="cercle-succes mb-6" style="background:rgba(245,185,66,0.15); box-shadow:0 0 50px -10px #f5b942;"><span class="text-4xl">✓</span></div>
       <h1 class="font-display text-2xl font-semibold mb-2">Succès !</h1>
-      <p class="text-sm text-slate-400 max-w-xs mb-1">
-        L'argent a été envoyé sur votre numéro Mobile Money.
-      </p>
+      <p class="text-sm text-slate-400 max-w-xs mb-1">L'argent a été envoyé sur votre numéro Mobile Money.</p>
       <p id="recap" class="text-sm font-medium mt-4" style="color:#f5b942"></p>
 
       <div id="encart-vip" class="hidden w-full mt-6"></div>
@@ -38,85 +31,105 @@
 
   <script src="/js/main.js"></script>
   <script>
-    const SUPABASE_URL = 'https://qlsetlqyejwrhztbesto.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4';
+    const SB_URL = 'https://qlsetlqyejwrhztbesto.supabase.co';
+    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4';
 
     rendreEtapes(document.getElementById('barre-etapes'), 5);
-    
-    // ⚠️ CORRECTION : lire et sauvegarder AVANT le reset
-    const p = lireParcours();
-    const numeroClient = p.numero_reception || p.numero_telephone;
-    const montantUsdt = p.montant_usdt;
-    const numeroReception = p.numero_reception;
-    const operateurReception = p.operateur_reception;
-    
-    if (montantUsdt) {
-      document.getElementById('recap').textContent = `Paiement envoyé vers ${numeroReception || 'votre numéro'} (${operateurReception || ''})`;
-    }
-    reinitialiserParcours();
 
-    async function afficherEncartVip() {
+    let sb = null, txCourante = null, timer = null, waNumero = '';
+
+    (async function init() {
       try {
-        if (!numeroClient) {
-          console.log('Pas de numéro client, encart VIP non affiché');
+        if (typeof window.supabase !== 'undefined') sb = window.supabase.createClient(SB_URL, SB_KEY);
+      } catch (e) {}
+
+      try { txCourante = JSON.parse(sessionStorage.getItem('transaction_vente')); } catch (e) {}
+      if (!txCourante) {
+        const id = sessionStorage.getItem('transaction_id');
+        if (id && sb) {
+          const { data } = await sb.from('transactions').select('*').eq('id', id).single();
+          if (data) txCourante = data;
+        }
+      }
+
+      if (txCourante) {
+        document.getElementById('recap').textContent =
+          'Paiement envoyé vers ' + (txCourante.numero_telephone || 'votre numéro') + ' (' + (txCourante.operateur || '') + ')';
+      }
+
+      if (sb) {
+        const { data: cfg } = await sb.from('config').select('*').eq('id', 1).single();
+        window.cfgGlobal = cfg || {};
+        waNumero = (cfg?.numero_whatsapp || '').replace(/[^0-9]/g, '');
+      }
+
+      majEtat();
+      timer = setInterval(majEtat, 5000);
+    })();
+
+    async function totalValide(numero) {
+      const { data } = await sb.from('transactions').select('montant_usdt').eq('numero_telephone', numero).eq('statut', 'valide');
+      return (data || []).reduce((s, t) => s + (parseFloat(t.montant_usdt) || 0), 0);
+    }
+
+    function carteVip(total, seuil, tauxNormal, tauxVip) {
+      if (total >= seuil) {
+        return '<div class="vip-card bg-gradient-to-br from-amber-500/20 to-amber-600/5 rounded-xl p-5 border-2 border-amber-500/50">' +
+          '<div class="text-3xl mb-2">🎉</div>' +
+          '<div class="text-lg font-bold text-amber-300 mb-1">Vous êtes CLIENT VIP !</div>' +
+          '<div class="text-xs text-slate-300">Vendez désormais à <strong class="text-amber-300">' + tauxVip + ' FCFA</strong> au lieu de ' + tauxNormal + ' FCFA</div></div>';
+      }
+      const restant = Math.max(seuil - total, 0);
+      const pourcent = Math.min((total / seuil) * 100, 100);
+      return '<div class="vip-card bg-slate-800/50 rounded-xl p-5 border border-slate-700">' +
+        '<div class="flex items-center gap-2 mb-3"><span class="text-2xl">🎁</span>' +
+        '<div class="text-left"><div class="text-sm font-bold text-white">Votre récompense vous attend !</div>' +
+        '<div class="text-xs text-slate-400">Plus que <strong class="text-emerald-400">' + restant.toFixed(2) + ' USDT</strong> pour devenir VIP</div></div></div>' +
+        '<div class="w-full bg-slate-700 rounded-full h-3 mb-2"><div class="bg-gradient-to-r from-emerald-400 to-emerald-600 h-3 rounded-full" style="width:' + pourcent + '%"></div></div>' +
+        '<div class="text-xs text-slate-500 text-center">' + total.toFixed(2) + ' / ' + seuil + ' USDT échangés</div>' +
+        '<div class="text-xs text-slate-400 mt-3 pt-3 border-t border-slate-700">Devenez VIP et vendez à <strong class="text-amber-300">' + tauxVip + ' FCFA</strong> au lieu de ' + tauxNormal + ' FCFA</div></div>';
+    }
+
+    async function majEtat() {
+      if (!txCourante || !sb) return;
+      const encart = document.getElementById('encart-vip');
+      try {
+        const { data: tx } = await sb.from('transactions').select('statut, motif_rejet, numero_telephone').eq('id', txCourante.id).single();
+        if (!tx) return;
+        const cfg = window.cfgGlobal || {};
+        const seuil = parseFloat(cfg.vip_seuil_usdt) || 100;
+        const tauxNormal = parseFloat(cfg.taux_vente_client) || 550;
+        const tauxVip = parseFloat(cfg.vip_taux_vente) || 560;
+
+        if (tx.statut === 'rejete') {
+          clearInterval(timer);
+          encart.classList.remove('hidden');
+          encart.innerHTML = '<div class="vip-card bg-red-500/10 rounded-xl p-5 border border-red-500/40">' +
+            '<div class="text-2xl mb-2">❌</div>' +
+            '<div class="text-sm font-bold text-red-300 mb-1">Transaction non validée</div>' +
+            '<div class="text-xs text-slate-300 mb-3">Motif : ' + (tx.motif_rejet || 'non précisé') + '</div>' +
+            (waNumero ? '<a href="https://wa.me/' + waNumero + '?text=' + encodeURIComponent('Bonjour, j\'ai un problème avec ma transaction.') + '" target="_blank" class="inline-block bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-lg">💬 Contacter le support</a>' : '') +
+            '</div>';
           return;
         }
-        
-        const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        const { data: cfg } = await sb.from('config').select('*').eq('id', 1).single();
-        const seuil = parseFloat(cfg?.vip_seuil_usdt) || 100;
-        const tauxNormal = parseFloat(cfg?.taux_vente_client) || 550;
-        const tauxVip = parseFloat(cfg?.vip_taux_vente) || 560;
-        
-        const { data: txs } = await sb.from('transactions')
-          .select('montant_usdt')
-          .eq('numero_telephone', numeroClient)
-          .eq('statut', 'valide');
-        
-        const totalUsdt = (txs || []).reduce((sum, t) => sum + (parseFloat(t.montant_usdt) || 0), 0);
-        const estVip = totalUsdt >= seuil;
-        const encart = document.getElementById('encart-vip');
-        encart.classList.remove('hidden');
-        
-        if (estVip) {
-          encart.innerHTML = `
-            <div class="vip-card bg-gradient-to-br from-amber-500/20 to-amber-600/5 rounded-xl p-5 border-2 border-amber-500/50">
-              <div class="text-3xl mb-2">🎉</div>
-              <div class="text-lg font-bold text-amber-300 mb-1">Félicitations !</div>
-              <div class="text-sm text-amber-200/80 mb-3">Vous êtes maintenant <strong>CLIENT VIP</strong> ⭐</div>
-              <div class="text-xs text-slate-300">
-                Vendez désormais à <strong class="text-amber-300">${tauxVip} FCFA</strong> au lieu de ${tauxNormal} FCFA
-              </div>
-            </div>
-          `;
-        } else {
-          const restant = Math.max(seuil - totalUsdt, 0);
-          const pourcent = Math.min((totalUsdt / seuil) * 100, 100);
-          encart.innerHTML = `
-            <div class="vip-card bg-slate-800/50 rounded-xl p-5 border border-slate-700">
-              <div class="flex items-center gap-2 mb-3">
-                <span class="text-2xl">🎁</span>
-                <div class="text-left">
-                  <div class="text-sm font-bold text-white">Votre récompense vous attend !</div>
-                  <div class="text-xs text-slate-400">Plus que <strong class="text-emerald-400">${restant.toFixed(2)} USDT</strong> pour devenir VIP</div>
-                </div>
-              </div>
-              <div class="w-full bg-slate-700 rounded-full h-3 mb-2">
-                <div class="bg-gradient-to-r from-emerald-400 to-emerald-600 h-3 rounded-full" style="width: ${pourcent}%"></div>
-              </div>
-              <div class="text-xs text-slate-500 text-center">${totalUsdt.toFixed(2)} / ${seuil} USDT échangés</div>
-              <div class="text-xs text-slate-400 mt-3 pt-3 border-t border-slate-700">
-                Devenez VIP et vendez à <strong class="text-amber-300">${tauxVip} FCFA</strong> au lieu de ${tauxNormal} FCFA
-              </div>
-            </div>
-          `;
+
+        if (tx.statut === 'valide') {
+          clearInterval(timer);
+          const total = await totalValide(tx.numero_telephone);
+          encart.classList.remove('hidden');
+          encart.innerHTML = '<div class="vip-card bg-emerald-500/10 rounded-xl p-4 border border-emerald-500/40 mb-3">' +
+            '<div class="text-sm font-bold text-emerald-300">✅ Transaction confirmée !</div></div>' +
+            carteVip(total, seuil, tauxNormal, tauxVip);
+          return;
         }
-      } catch (e) {
-        console.error('Erreur encart VIP:', e);
-      }
+
+        const total = await totalValide(tx.numero_telephone);
+        encart.classList.remove('hidden');
+        encart.innerHTML = '<div class="vip-card bg-slate-800/50 rounded-xl p-4 border border-slate-700 mb-3">' +
+          '<div class="text-xs text-slate-400">⏳ Validation en cours… cette page se met à jour toute seule.</div></div>' +
+          carteVip(total, seuil, tauxNormal, tauxVip);
+      } catch (e) { console.error(e); }
     }
-    
-    afficherEncartVip();
   </script>
 </body>
 </html>
