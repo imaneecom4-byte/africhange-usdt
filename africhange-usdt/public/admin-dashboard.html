@@ -61,7 +61,6 @@
 
   <main class="pt-24 pb-10 px-6 max-w-7xl mx-auto space-y-8">
 
-    <!-- === DASHBOARD CAHIER DE CAISSE === -->
     <div class="flex items-center justify-between">
       <div>
         <h2 class="text-2xl font-bold text-white">Tableau de bord</h2>
@@ -95,7 +94,51 @@
         <h3 id="stat-stock" class="text-3xl font-bold text-cyan-400 mt-1">— USDT</h3>
       </div>
     </section>
-    <!-- === FIN DASHBOARD === -->
+
+    <!-- === DÉBUT AJOUT VIP : Carte Clients VIP === -->
+    <div class="glass-card p-6 rounded-2xl animate-fade-in">
+      <div class="flex justify-between items-start mb-4">
+        <div>
+          <h3 class="font-bold text-white flex items-center gap-2">
+            <i class="ph ph-crown text-amber-400"></i> Clients VIP & Fidélité
+          </h3>
+          <p class="text-xs text-slate-400 mt-1">Tous tes clients, classés par volume échangé</p>
+        </div>
+        <div class="flex gap-3 text-xs">
+          <div class="text-center">
+            <div id="count-vip" class="text-2xl font-bold text-amber-400">0</div>
+            <div class="text-slate-500">VIP actifs</div>
+          </div>
+          <div class="text-center">
+            <div id="count-proches" class="text-2xl font-bold text-emerald-400">0</div>
+            <div class="text-slate-500">Proches du VIP</div>
+          </div>
+          <div class="text-center">
+            <div id="count-total" class="text-2xl font-bold text-slate-300">0</div>
+            <div class="text-slate-500">Total clients</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="overflow-x-auto max-h-[500px] overflow-y-auto">
+        <table class="w-full text-left border-collapse min-w-[600px]">
+          <thead class="sticky top-0 bg-slate-900">
+            <tr class="text-slate-400 text-xs uppercase border-b border-slate-700">
+              <th class="p-3">Client</th>
+              <th class="p-3">Pays</th>
+              <th class="p-3">USDT cumulés</th>
+              <th class="p-3">Nb transactions</th>
+              <th class="p-3">Statut</th>
+              <th class="p-3 text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody id="liste-clients-vip" class="divide-y divide-slate-800 text-sm">
+            <tr><td colspan="6" class="p-8 text-center text-slate-500">Chargement...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <!-- === FIN AJOUT VIP === -->
 
     <div class="flex flex-col lg:flex-row gap-8">
 
@@ -141,13 +184,37 @@
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="text-xs text-slate-400 block mb-1">Taux Achat</label>
-                <input type="number" id="cfg-taux-achat" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none" placeholder="750">
+                <input type="number" id="cfg-taux-achat" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none" placeholder="650">
               </div>
               <div>
                 <label class="text-xs text-slate-400 block mb-1">Taux Vente</label>
-                <input type="number" id="cfg-taux-vente" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none" placeholder="730">
+                <input type="number" id="cfg-taux-vente" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none" placeholder="550">
               </div>
             </div>
+
+            <!-- === DÉBUT AJOUT VIP : Réglages programme de fidélité === -->
+            <div class="pt-3 border-t border-slate-700">
+              <label class="text-xs text-amber-400 font-bold block mb-2 flex items-center gap-1">
+                <i class="ph ph-crown"></i> Programme de fidélité VIP
+              </label>
+              <div class="grid grid-cols-3 gap-2">
+                <div>
+                  <label class="text-[10px] text-slate-500 block mb-1">Palier USDT</label>
+                  <input type="number" id="cfg-vip-seuil" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white outline-none text-sm" placeholder="100">
+                </div>
+                <div>
+                  <label class="text-[10px] text-slate-500 block mb-1">Taux VIP Achat</label>
+                  <input type="number" id="cfg-vip-taux-achat" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white outline-none text-sm" placeholder="630">
+                </div>
+                <div>
+                  <label class="text-[10px] text-slate-500 block mb-1">Taux VIP Vente</label>
+                  <input type="number" id="cfg-vip-taux-vente" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white outline-none text-sm" placeholder="560">
+                </div>
+              </div>
+              <p class="text-[10px] text-slate-500 mt-2">Dès qu'un client atteint le palier (ex: 100 USDT cumulés), il bénéficie des taux VIP automatiquement.</p>
+            </div>
+            <!-- === FIN AJOUT VIP === -->
+
             <div>
               <label class="text-xs text-slate-400 block mb-1">Adresse USDT</label>
               <input type="text" id="cfg-adresse" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-slate-300 outline-none" placeholder="0x...">
@@ -207,7 +274,6 @@
     </div>
   </main>
 
-  <!-- Modal Preuve -->
   <div id="modale-preuve" class="hidden fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4" onclick="fermerModale()">
     <div class="relative max-w-3xl w-full">
       <button class="absolute top-4 right-4 text-white hover:text-red-400 text-3xl">&times;</button>
@@ -215,7 +281,6 @@
     </div>
   </div>
 
-  <!-- === MODAL HISTORIQUE === -->
   <div id="modale-historique" class="hidden fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4">
     <div class="relative max-w-4xl w-full bg-slate-900 rounded-2xl p-6 max-h-[80vh] overflow-y-auto">
       <button class="absolute top-4 right-4 text-white hover:text-red-400 text-3xl" onclick="fermerHistorique()">&times;</button>
@@ -272,7 +337,6 @@
         document.body.removeChild(ta);
       }
 
-      // === CALCUL CAHIER DE CAISSE ===
       async function rafraichirStats() {
         try {
           const { data: cfg } = await sbClient.from('config').select('taux_achat_client, taux_vente_client, periode_debut').eq('id', 1).single();
@@ -381,7 +445,6 @@
         }
       }
 
-      // === VALIDATION AVEC DATE ===
       window.validerTransaction = async function (id) {
         if (!confirm('Confirmer la validation ?')) return;
         try {
@@ -402,6 +465,7 @@
           showToast('Transaction validée ! Bénéfice : ' + benef.toLocaleString('fr-FR') + ' FCFA');
           rafraichirTransactions(); 
           rafraichirStats();
+          chargerClientsVipUI();
         } catch (e) { alert('Erreur : ' + e.message); }
       };
 
@@ -417,7 +481,108 @@
         rafraichirTransactions();
       };
 
-      // === NOUVELLE PÉRIODE ===
+      // === DÉBUT AJOUT VIP : chargement liste clients ===
+      async function chargerClientsVipUI() {
+        const liste = document.getElementById('liste-clients-vip');
+        try {
+          const { data: cfg } = await sbClient.from('config').select('vip_seuil_usdt, vip_taux_achat, vip_taux_vente').eq('id', 1).single();
+          const seuil = parseFloat(cfg?.vip_seuil_usdt) || 100;
+          const tauxVipAchat = parseFloat(cfg?.vip_taux_achat) || 630;
+          const tauxVipVente = parseFloat(cfg?.vip_taux_vente) || 560;
+          
+          const { data: txs, error } = await sbClient.from('transactions')
+            .select('numero_telephone, prenom, nom, pays, montant_usdt, statut')
+            .eq('statut', 'valide');
+          
+          if (error) throw error;
+          
+          // Grouper par numéro
+          const clients = {};
+          (txs || []).forEach(t => {
+            const num = t.numero_telephone;
+            if (!num) return;
+            if (!clients[num]) {
+              clients[num] = {
+                numero: num,
+                prenom: t.prenom || '',
+                nom: t.nom || '',
+                pays: t.pays || '',
+                total: 0,
+                nb: 0
+              };
+            }
+            clients[num].total += parseFloat(t.montant_usdt) || 0;
+            clients[num].nb += 1;
+          });
+          
+          const listeClients = Object.values(clients).sort((a, b) => b.total - a.total);
+          
+          const countVip = listeClients.filter(c => c.total >= seuil).length;
+          const countProches = listeClients.filter(c => c.total < seuil && c.total >= seuil * 0.5).length;
+          
+          document.getElementById('count-vip').textContent = countVip;
+          document.getElementById('count-proches').textContent = countProches;
+          document.getElementById('count-total').textContent = listeClients.length;
+          
+          if (listeClients.length === 0) {
+            liste.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-500">Aucun client pour l\'instant.</td></tr>';
+            return;
+          }
+          
+          liste.innerHTML = listeClients.map(c => {
+            const estVip = c.total >= seuil;
+            const pourcent = Math.min((c.total / seuil) * 100, 100);
+            const restant = Math.max(seuil - c.total, 0);
+            const nomComplet = (c.prenom + ' ' + c.nom).trim() || 'Client';
+            
+            let statutHtml;
+            if (estVip) {
+              statutHtml = '<span class="px-2 py-1 rounded-full bg-amber-500/20 text-amber-400 text-xs font-bold border border-amber-500/30">⭐ VIP</span>';
+            } else {
+              statutHtml = `
+                <div class="w-full">
+                  <div class="w-full bg-slate-700 rounded-full h-1.5 mb-1">
+                    <div class="bg-gradient-to-r from-emerald-400 to-emerald-600 h-1.5 rounded-full" style="width: ${pourcent}%"></div>
+                  </div>
+                  <div class="text-[10px] text-slate-500">${restant.toFixed(1)} USDT restants</div>
+                </div>
+              `;
+            }
+            
+            const numWhatsapp = c.numero.replace(/[^0-9]/g, '');
+            const messageVip = estVip 
+              ? `Bonjour ${c.prenom} ! Merci d'être cliente VIP chez AfriChange ⭐` 
+              : `Bonjour ${c.prenom} ! Plus que ${restant.toFixed(1)} USDT pour devenir VIP chez AfriChange 🎁`;
+            const waLink = `https://wa.me/${numWhatsapp}?text=${encodeURIComponent(messageVip)}`;
+            
+            return `
+              <tr class="hover:bg-white/5 ${estVip ? 'bg-amber-500/5' : ''}">
+                <td class="p-3">
+                  <div class="font-semibold text-white text-sm">${nomComplet}</div>
+                  <div class="text-[11px] text-slate-500 font-mono">${c.numero}</div>
+                </td>
+                <td class="p-3 text-xs text-slate-400">${c.pays || '—'}</td>
+                <td class="p-3">
+                  <div class="font-bold text-emerald-400">${c.total.toFixed(2)}</div>
+                  <div class="text-[10px] text-slate-500">USDT</div>
+                </td>
+                <td class="p-3 text-sm text-slate-300">${c.nb}</td>
+                <td class="p-3">${statutHtml}</td>
+                <td class="p-3 text-right">
+                  <a href="${waLink}" target="_blank" class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30" title="Envoyer un WhatsApp">
+                    <i class="ph ph-whatsapp-logo"></i> Msg
+                  </a>
+                </td>
+              </tr>
+            `;
+          }).join('');
+        } catch (e) {
+          console.error(e);
+          liste.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-red-400">Erreur : ' + e.message + '</td></tr>';
+        }
+      }
+      // === FIN AJOUT VIP ===
+
       window.demarrerNouvellePeriode = async function () {
         if (!confirm('Démarrer une nouvelle période ? Les chiffres actuels seront archivés et les compteurs repartiront de zéro.')) return;
         
@@ -465,7 +630,6 @@
         } catch (e) { alert('Erreur : ' + e.message); }
       };
 
-      // === HISTORIQUE ===
       window.voirHistorique = async function () {
         document.getElementById('modale-historique').classList.remove('hidden');
         const liste = document.getElementById('liste-historique');
@@ -596,10 +760,14 @@
           adresse_usdt_reception: document.getElementById('cfg-adresse').value,
           numero_whatsapp: document.getElementById('cfg-whatsapp').value,
           maintenance_mode: document.getElementById('cfg-maintenance').checked,
-          maintenance_message: document.getElementById('cfg-maintenance-msg').value
+          maintenance_message: document.getElementById('cfg-maintenance-msg').value,
+          vip_seuil_usdt: parseFloat(document.getElementById('cfg-vip-seuil').value) || 100,
+          vip_taux_achat: parseFloat(document.getElementById('cfg-vip-taux-achat').value) || 630,
+          vip_taux_vente: parseFloat(document.getElementById('cfg-vip-taux-vente').value) || 560
         }).eq('id', 1);
         if (error) { alert('Erreur : ' + error.message); return; }
         showToast('Configuration sauvegardée !');
+        chargerClientsVipUI();
       });
 
       async function chargerPromosUI() {
@@ -670,10 +838,14 @@
             document.getElementById('cfg-whatsapp').value = cfg.numero_whatsapp || '';
             document.getElementById('cfg-maintenance').checked = cfg.maintenance_mode || false;
             document.getElementById('cfg-maintenance-msg').value = cfg.maintenance_message || '';
+            document.getElementById('cfg-vip-seuil').value = cfg.vip_seuil_usdt || 100;
+            document.getElementById('cfg-vip-taux-achat').value = cfg.vip_taux_achat || 630;
+            document.getElementById('cfg-vip-taux-vente').value = cfg.vip_taux_vente || 560;
           }
         } catch (e) { console.error(e); }
         rafraichirStats();
         rafraichirTransactions();
+        chargerClientsVipUI();
         chargerAgentsUI();
         chargerPromosUI();
         setInterval(() => { rafraichirTransactions(); rafraichirStats(); }, 15000);
