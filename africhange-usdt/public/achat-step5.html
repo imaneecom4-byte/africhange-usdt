@@ -5,7 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Acheter des USDT — Succès</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="/css/style.css" />
+<style>
+  .vip-card { animation: fadeInUp 0.5s ease-out; }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-5">
 
@@ -22,18 +30,97 @@
       </p>
       <p id="recap" class="text-sm font-medium mt-4" style="color:#26a17b"></p>
 
+      <!-- === DÉBUT AJOUT VIP : Encart de récompense === -->
+      <div id="encart-vip" class="hidden w-full mt-6"></div>
+      <!-- === FIN AJOUT VIP === -->
+
       <a href="/index.html" class="btn btn-outline w-full mt-8">Retour à l'accueil</a>
     </div>
   </div>
 
   <script src="/js/main.js"></script>
   <script>
+    const SUPABASE_URL = 'https://qlsetlqyejwrhztbesto.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4';
+
     rendreEtapes(document.getElementById('barre-etapes'), 5);
     const p = lireParcours();
     if (p.montant_usdt) {
       document.getElementById('recap').textContent = `${p.montant_usdt} USDT envoyés vers ${p.wallet_usdt_reception || 'votre wallet'}`;
     }
     reinitialiserParcours();
+
+    // === DÉBUT AJOUT VIP : Afficher l'encart de récompense ===
+    async function afficherEncartVip() {
+      try {
+        const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // 1. Charger la config VIP
+        const { data: cfg } = await sb.from('config').select('*').eq('id', 1).single();
+        const seuil = parseFloat(cfg?.vip_seuil_usdt) || 100;
+        const tauxNormal = parseFloat(cfg?.taux_achat_client) || 650;
+        const tauxVip = parseFloat(cfg?.vip_taux_achat) || 630;
+        
+        // 2. Récupérer le numéro du client depuis le parcours
+        const numero = p.numero_telephone;
+        if (!numero) return;
+        
+        // 3. Calculer le total USDT cumulé de ce client
+        const { data: txs } = await sb.from('transactions')
+          .select('montant_usdt')
+          .eq('numero_telephone', numero)
+          .eq('statut', 'valide');
+        
+        const totalUsdt = (txs || []).reduce((sum, t) => sum + (parseFloat(t.montant_usdt) || 0), 0);
+        const estVip = totalUsdt >= seuil;
+        
+        // 4. Afficher l'encart approprié
+        const encart = document.getElementById('encart-vip');
+        encart.classList.remove('hidden');
+        
+        if (estVip) {
+          // Client VIP
+          encart.innerHTML = `
+            <div class="vip-card bg-gradient-to-br from-amber-500/20 to-amber-600/5 rounded-xl p-5 border-2 border-amber-500/50">
+              <div class="text-3xl mb-2">🎉</div>
+              <div class="text-lg font-bold text-amber-300 mb-1">Félicitations !</div>
+              <div class="text-sm text-amber-200/80 mb-3">Vous êtes maintenant <strong>CLIENT VIP</strong> ⭐</div>
+              <div class="text-xs text-slate-300">
+                Profitez de nos meilleurs taux dès votre prochaine transaction :<br>
+                <strong class="text-amber-300">${tauxVip} FCFA</strong> au lieu de ${tauxNormal} FCFA
+              </div>
+            </div>
+          `;
+        } else {
+          // Client en progression vers VIP
+          const restant = Math.max(seuil - totalUsdt, 0);
+          const pourcent = Math.min((totalUsdt / seuil) * 100, 100);
+          encart.innerHTML = `
+            <div class="vip-card bg-slate-800/50 rounded-xl p-5 border border-slate-700">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-2xl">🎁</span>
+                <div class="text-left">
+                  <div class="text-sm font-bold text-white">Votre récompense vous attend !</div>
+                  <div class="text-xs text-slate-400">Plus que <strong class="text-emerald-400">${restant.toFixed(2)} USDT</strong> pour devenir VIP</div>
+                </div>
+              </div>
+              <div class="w-full bg-slate-700 rounded-full h-3 mb-2">
+                <div class="bg-gradient-to-r from-emerald-400 to-emerald-600 h-3 rounded-full transition-all" style="width: ${pourcent}%"></div>
+              </div>
+              <div class="text-xs text-slate-500 text-center">${totalUsdt.toFixed(2)} / ${seuil} USDT échangés</div>
+              <div class="text-xs text-slate-400 mt-3 pt-3 border-t border-slate-700">
+                Devenez VIP et achetez à <strong class="text-amber-300">${tauxVip} FCFA</strong> au lieu de ${tauxNormal} FCFA
+              </div>
+            </div>
+          `;
+        }
+      } catch (e) {
+        console.error('Erreur encart VIP:', e);
+      }
+    }
+    
+    afficherEncartVip();
+    // === FIN AJOUT VIP ===
   </script>
 </body>
 </html>
