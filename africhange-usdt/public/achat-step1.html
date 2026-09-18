@@ -34,12 +34,16 @@
         <p class="text-slate-400">Ces informations nous permettent de préparer votre transaction.</p>
       </div>
 
-      <!-- ZONE D'ALERTE SI ÇA PLANTE -->
       <div id="global-error" class="hidden bg-red-900/50 border border-red-500 text-red-200 p-4 rounded-lg mb-6 text-sm"></div>
+
+      <!-- === DÉBUT AJOUT VIP : Carte de statut client === -->
+      <div id="vip-card" class="hidden mb-6 rounded-xl p-4 border">
+        <div id="vip-card-content"></div>
+      </div>
+      <!-- === FIN AJOUT VIP === -->
 
       <form id="form-achat-step1" class="space-y-6">
         
-        <!-- Nom et Prénom -->
         <div class="grid md:grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium text-slate-300 mb-2">Prénom</label>
@@ -51,7 +55,6 @@
           </div>
         </div>
 
-        <!-- Pays (Déclencheur des indicateurs) -->
         <div>
           <label class="block text-sm font-medium text-slate-300 mb-2">Pays</label>
           <select id="pays" class="champ bg-slate-900 border-slate-600 text-white" required onchange="handleCountryChange()">
@@ -63,7 +66,6 @@
           </select>
         </div>
 
-        <!-- Numéro de téléphone avec indicateur dynamique -->
         <div>
           <label class="block text-sm font-medium text-slate-300 mb-2">Numéro de téléphone</label>
           <div class="input-group">
@@ -73,7 +75,6 @@
           <p class="text-xs text-slate-500 mt-1">L'indicatif sera ajouté automatiquement.</p>
         </div>
 
-        <!-- Confirmation Numéro -->
         <div>
           <label class="block text-sm font-medium text-slate-300 mb-2">Confirmer le numéro</label>
           <div class="input-group">
@@ -84,16 +85,12 @@
           <p id="phone-mismatch-msg" class="text-xs text-red-400 mt-1 hidden">✗ Les numéros ne correspondent pas</p>
         </div>
 
-        <!-- Opérateurs (Affichés dynamiquement avec VRAIS LOGOS SVG) -->
         <div id="operateurs-container" class="hidden">
           <label class="block text-sm font-medium text-slate-300 mb-3">Réseau mobile</label>
-          <div id="liste-operateurs" class="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <!-- Injecté par JS -->
-          </div>
+          <div id="liste-operateurs" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
           <input type="hidden" id="operateur-selectionne" required />
         </div>
 
-        <!-- Montant -->
         <div>
           <label class="block text-sm font-medium text-slate-300 mb-2">Montant à acheter (USDT)</label>
           <input type="number" step="0.01" id="montant-usdt" class="champ bg-slate-900 border-slate-600 text-white placeholder-slate-500" placeholder="Ex : 50" min="1" required />
@@ -101,13 +98,11 @@
           <p id="montant-fcfa" class="text-lg font-bold text-emerald-400 mt-1"></p>
         </div>
 
-        <!-- Adresse Wallet USDT -->
         <div>
           <label class="block text-sm font-medium text-slate-300 mb-2">Adresse wallet USDT (réception)</label>
           <input type="text" id="adresse-wallet" class="champ bg-slate-900 border-slate-600 text-white placeholder-slate-500 font-mono text-sm" placeholder="Ex : 0x..." required oninput="validateWallet()" />
         </div>
 
-        <!-- Confirmation Adresse Wallet -->
         <div>
           <label class="block text-sm font-medium text-slate-300 mb-2">Confirmer l'adresse USDT</label>
           <input type="text" id="confirm-wallet" class="champ bg-slate-900 border-slate-600 text-white placeholder-slate-500 font-mono text-sm" placeholder="Ex : 0x..." required oninput="validateWallet()" />
@@ -126,16 +121,18 @@
   </main>
 
   <script>
-    // --- CONFIGURATION ---
     const SUPABASE_URL = 'https://qlsetlqyejwrhztbesto.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4';
     
     let supabaseClient;
-    let currentRate = 750; // TAUX PAR DÉFAUT DE SECOURS
+    let currentRate = 650;        // taux normal
+    let vipRate = 630;            // taux VIP
+    let vipSeuil = 100;           // USDT pour devenir VIP
+    let clientIsVip = false;      // statut du client actuel
+    let clientTotalUsdt = 0;      // total USDT déjà échangés par ce client
     let agentsData = [];
     let currentPrefix = "";
 
-    // VRAIS LOGOS SVG (Intégrés directement, pas d'URL externe)
     const operatorLogos = {
       'Orange Money': `<div class="operator-logo" style="background:#ff7900; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:14px;">OM</div>`,
       'Moov Money': `<div class="operator-logo" style="background:#0066cc; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:14px;">MM</div>`,
@@ -145,76 +142,118 @@
       'Celtiis': `<div class="operator-logo" style="background:#9333ea; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:14px;">C</div>`
     };
 
-    // DONNÉES DE SECOURS (SI SUPABASE ÉCHEC)
     const fallbackAgents = {
-      'Burkina Faso': [
-        { operateur: 'Orange Money' },
-        { operateur: 'Moov Money' }
-      ],
-      'Côte d\'Ivoire': [
-        { operateur: 'Wave' },
-        { operateur: 'Orange Money' },
-        { operateur: 'MTN Money' }
-      ],
-      'Bénin': [
-        { operateur: 'MTN Money' },
-        { operateur: 'Celtiis' }
-      ],
-      'Togo': [
-        { operateur: 'Moov Money' },
-        { operateur: 'Mixx By Yas' }
-      ]
+      'Burkina Faso': [{ operateur: 'Orange Money' }, { operateur: 'Moov Money' }],
+      'Côte d\'Ivoire': [{ operateur: 'Wave' }, { operateur: 'Orange Money' }, { operateur: 'MTN Money' }],
+      'Bénin': [{ operateur: 'MTN Money' }, { operateur: 'Celtiis' }],
+      'Togo': [{ operateur: 'Moov Money' }, { operateur: 'Mixx By Yas' }]
     };
 
     function initApp() {
       try {
         if (typeof window.supabase === 'undefined') throw new Error("Librairie manquante");
         supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        console.log("✅ Client Supabase initialisé");
         chargerDonnees();
       } catch (err) {
         console.error("❌ Erreur init:", err);
-        utiliserModeSecours();
       }
     }
 
     async function chargerDonnees() {
       try {
-        console.log("🔄 Chargement des données depuis Supabase...");
-        
-        // 1. Charger Config (Taux)
-        const { data: cfg, error: errCfg } = await supabaseClient.from('config').select('*').limit(1).single();
-        if (errCfg || !cfg) {
-            console.warn("️ Impossible de charger les taux, utilisation du taux par défaut (750).");
-            document.getElementById('taux-valeur').textContent = `${currentRate} FCFA/USDT (Par défaut)`;
-        } else {
-            currentRate = cfg.taux_achat_client;
-            document.getElementById('taux-valeur').textContent = `${currentRate} FCFA/USDT`;
-            console.log("✅ Taux chargé depuis Supabase:", currentRate);
+        const { data: cfg, error: errCfg } = await supabaseClient.from('config').select('*').eq('id', 1).single();
+        if (!errCfg && cfg) {
+          currentRate = parseFloat(cfg.taux_achat_client) || 650;
+          vipRate = parseFloat(cfg.vip_taux_achat) || 630;
+          vipSeuil = parseFloat(cfg.vip_seuil_usdt) || 100;
+          document.getElementById('taux-valeur').textContent = `${currentRate} FCFA/USDT`;
         }
 
-        // 2. Charger Agents (Opérateurs)
-        const { data: agt, error: errAgt } = await supabaseClient.from('agents').select('*').eq('actif', true);
-        if (errAgt || !agt || agt.length === 0) {
-            console.warn("⚠️ Aucun agent trouvé, utilisation de la liste de secours.");
-            agentsData = [];
-        } else {
-            agentsData = agt;
-            console.log("✅ Agents chargés:", agentsData.length);
-        }
+        const { data: agt } = await supabaseClient.from('agents').select('*').eq('actif', true);
+        if (agt && agt.length > 0) agentsData = agt;
 
       } catch (err) {
-        console.error("❌ Erreur globale:", err);
-        utiliserModeSecours();
+        console.error("❌ Erreur chargement:", err);
       }
     }
 
-    function utiliserModeSecours() {
-        document.getElementById('global-error').classList.remove('hidden');
-        document.getElementById('error-msg').textContent = "Mode dégradé activé : Utilisation des données par défaut.";
-        currentRate = 750;
-        document.getElementById('taux-valeur').textContent = `${currentRate} FCFA/USDT (Par défaut)`;
+    // === DÉBUT AJOUT VIP : vérifier le statut du client ===
+    async function verifierStatutVip() {
+      const num1 = document.getElementById('numero-telephone').value.trim();
+      const num2 = document.getElementById('confirm-telephone').value.trim();
+      
+      // On vérifie seulement si les 2 numéros correspondent
+      if (!num1 || num1 !== num2 || !currentPrefix) return;
+      
+      const fullNumber = currentPrefix + num1;
+      const vipCard = document.getElementById('vip-card');
+      const content = document.getElementById('vip-card-content');
+      
+      try {
+        // Chercher toutes les transactions VALIDÉES de ce numéro
+        const { data: transactions } = await supabaseClient
+          .from('transactions')
+          .select('montant_usdt')
+          .eq('numero_telephone', fullNumber)
+          .eq('statut', 'valide');
+        
+        // Calculer le total
+        clientTotalUsdt = (transactions || []).reduce((sum, t) => sum + (parseFloat(t.montant_usdt) || 0), 0);
+        clientIsVip = clientTotalUsdt >= vipSeuil;
+        
+        // Déterminer le taux à appliquer
+        const tauxApplique = clientIsVip ? vipRate : currentRate;
+        document.getElementById('taux-valeur').textContent = `${tauxApplique} FCFA/USDT`;
+        
+        // Recalculer le montant FCFA si déjà rempli
+        const montantUsdt = parseFloat(document.getElementById('montant-usdt').value);
+        if (montantUsdt > 0) {
+          const total = montantUsdt * tauxApplique;
+          document.getElementById('montant-fcfa').textContent = `Vous paierez : ${total.toLocaleString('fr-FR')} FCFA`;
+        }
+        
+        // Afficher la carte VIP appropriée
+        if (clientIsVip) {
+          vipCard.className = 'mb-6 rounded-xl p-4 border bg-amber-500/10 border-amber-500/30';
+          content.innerHTML = `
+            <div class="flex items-center gap-3">
+              <div class="text-3xl">⭐</div>
+              <div>
+                <div class="font-bold text-amber-300">Cliente VIP</div>
+                <div class="text-xs text-amber-200/80 mt-1">
+                  Vous avez échangé <strong>${clientTotalUsdt.toFixed(2)} USDT</strong> chez nous.
+                  <br>Vous achetez à <strong>${vipRate} FCFA</strong> au lieu de ${currentRate} FCFA !
+                </div>
+              </div>
+            </div>
+          `;
+          vipCard.classList.remove('hidden');
+        } else if (clientTotalUsdt > 0) {
+          const restant = vipSeuil - clientTotalUsdt;
+          const pourcent = Math.min((clientTotalUsdt / vipSeuil) * 100, 100);
+          vipCard.className = 'mb-6 rounded-xl p-4 border bg-emerald-500/10 border-emerald-500/30';
+          content.innerHTML = `
+            <div class="flex items-start gap-3">
+              <div class="text-3xl">🎁</div>
+              <div class="flex-1">
+                <div class="font-bold text-emerald-300 mb-2">Plus que ${restant.toFixed(2)} USDT pour devenir VIP !</div>
+                <div class="w-full bg-slate-700 rounded-full h-2 mb-1">
+                  <div class="bg-gradient-to-r from-emerald-400 to-emerald-600 h-2 rounded-full" style="width: ${pourcent}%"></div>
+                </div>
+                <div class="text-xs text-slate-400">${clientTotalUsdt.toFixed(2)} / ${vipSeuil} USDT échangés</div>
+              </div>
+            </div>
+          `;
+          vipCard.classList.remove('hidden');
+        } else {
+          vipCard.classList.add('hidden');
+        }
+        
+      } catch (e) {
+        console.error('Erreur vérification VIP:', e);
+      }
     }
+    // === FIN AJOUT VIP ===
 
     function handleCountryChange() {
       const select = document.getElementById('pays');
@@ -238,7 +277,6 @@
           el.textContent = prefix;
           el.classList.remove('hidden');
         });
-        
         showOperatorsForCountry(pays);
       } else {
         inputs.forEach(id => {
@@ -248,29 +286,22 @@
         });
         badges.forEach(id => document.getElementById(id).classList.add('hidden'));
         document.getElementById('operateurs-container').classList.add('hidden');
+        document.getElementById('vip-card').classList.add('hidden');
       }
-      
       validateForm();
     }
 
     function showOperatorsForCountry(pays) {
       if (!pays) return;
-      
       const container = document.getElementById('operateurs-container');
       const liste = document.getElementById('liste-operateurs');
-      
       let agentsPays = agentsData.filter(a => a.pays === pays);
-      
-      if (agentsPays.length === 0 && fallbackAgents[pays]) {
-          agentsPays = fallbackAgents[pays];
-      }
-      
+      if (agentsPays.length === 0 && fallbackAgents[pays]) agentsPays = fallbackAgents[pays];
       if (agentsPays.length === 0) {
         liste.innerHTML = '<p class="text-slate-400 col-span-full text-center">Aucun opérateur disponible.</p>';
         container.classList.remove('hidden');
         return;
       }
-
       liste.innerHTML = agentsPays.map(agent => {
         const logoSVG = operatorLogos[agent.operateur] || operatorLogos['Orange Money'];
         return `
@@ -346,14 +377,28 @@
     }
 
     ['numero-telephone', 'confirm-telephone'].forEach(id => {
-      document.getElementById(id).addEventListener('input', validateForm);
+      document.getElementById(id).addEventListener('input', () => {
+        validateForm();
+        // === AJOUT VIP : vérifier statut dès que les numéros correspondent ===
+        if (validatePhoneMatch()) {
+          verifierStatutVip();
+        } else {
+          document.getElementById('vip-card').classList.add('hidden');
+          clientIsVip = false;
+          clientTotalUsdt = 0;
+          document.getElementById('taux-valeur').textContent = `${currentRate} FCFA/USDT`;
+        }
+      });
     });
+    
     ['adresse-wallet', 'confirm-wallet'].forEach(id => {
       document.getElementById(id).addEventListener('input', validateForm);
     });
+    
     document.getElementById('montant-usdt').addEventListener('input', function() {
+      const taux = clientIsVip ? vipRate : currentRate;
       if (parseFloat(this.value) > 0) {
-        const total = this.value * currentRate;
+        const total = this.value * taux;
         document.getElementById('montant-fcfa').textContent = `Vous paierez : ${total.toLocaleString('fr-FR')} FCFA`;
       } else {
         document.getElementById('montant-fcfa').textContent = '';
@@ -390,7 +435,9 @@
 
       const fullNumber = currentPrefix + document.getElementById('numero-telephone').value.trim();
       const montantUSDT = parseFloat(document.getElementById('montant-usdt').value);
-      const montantFCFA = montantUSDT * currentRate;
+      // === AJOUT VIP : utiliser le bon taux ===
+      const tauxApplique = clientIsVip ? vipRate : currentRate;
+      const montantFCFA = montantUSDT * tauxApplique;
 
       const transactionData = {
         prenom: document.getElementById('prenom').value,
@@ -403,43 +450,22 @@
         adresse_wallet_usdt: document.getElementById('adresse-wallet').value,
         type_transaction: 'achat',
         statut: 'en_attente',
-        taux_applique: currentRate
+        taux_applique: tauxApplique
+        // Note : on ajoute pas est_vip car cette colonne n'existe pas encore
       };
 
-      console.log("📤 Envoi des données à Supabase:", transactionData);
-
       try {
-        if(supabaseClient) {
-            const { data, error } = await supabaseClient.from('transactions').insert([transactionData]).select().single();
-            
-            if (error) throw error;
-            
-            console.log("✅ Transaction enregistrée:", data);
-            
-            sessionStorage.setItem('transaction_achat', JSON.stringify(data));
-            sessionStorage.setItem('transaction_id', data.id);
-            
-            setTimeout(() => {
-                window.location.href = '/achat-step2.html';
-            }, 500);
-            
-        } else {
-            alert("Mode test : Supabase non disponible.");
-            transactionData.id = 'test-' + Date.now();
-            sessionStorage.setItem('transaction_achat', JSON.stringify(transactionData));
-            setTimeout(() => {
-                window.location.href = '/achat-step2.html';
-            }, 500);
-        }
+        const { data, error } = await supabaseClient.from('transactions').insert([transactionData]).select().single();
+        if (error) throw error;
+        sessionStorage.setItem('transaction_achat', JSON.stringify(data));
+        sessionStorage.setItem('transaction_id', data.id);
+        setTimeout(() => { window.location.href = '/achat-step2.html'; }, 500);
       } catch (err) {
-        console.error("❌ Erreur lors de l'envoi:", err);
         btn.disabled = false;
         txt.classList.remove('opacity-0');
         loader.classList.add('hidden');
-        
-        const errorMsg = err.message || "Erreur inconnue";
         document.getElementById('global-error').classList.remove('hidden');
-        document.getElementById('error-msg').textContent = "Échec de la sauvegarde : " + errorMsg;
+        document.getElementById('global-error').textContent = "Échec : " + (err.message || "Erreur inconnue");
       }
     });
 
