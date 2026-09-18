@@ -125,21 +125,22 @@
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4';
     
     let supabaseClient;
-    let currentRate = 650;        // taux normal
-    let vipRate = 630;            // taux VIP
-    let vipSeuil = 100;           // USDT pour devenir VIP
-    let clientIsVip = false;      // statut du client actuel
-    let clientTotalUsdt = 0;      // total USDT déjà échangés par ce client
+    let currentRate = 650;
+    let vipRate = 630;
+    let vipSeuil = 100;
+    let clientIsVip = false;
+    let clientTotalUsdt = 0;
     let agentsData = [];
     let currentPrefix = "";
 
+    // === LOGOS OFFICIELS (PNG uploadés à la racine de GitHub) ===
     const operatorLogos = {
-      'Orange Money': `<div class="operator-logo" style="background:#ff7900; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:14px;">OM</div>`,
-      'Moov Money': `<div class="operator-logo" style="background:#0066cc; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:14px;">MM</div>`,
-      'MTN Money': `<div class="operator-logo" style="background:#ffcc00; display:flex; align-items:center; justify-content:center; color:black; font-weight:bold; font-size:14px;">MTN</div>`,
-      'Wave': `<div class="operator-logo" style="background:#1dc4ff; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:14px;">W</div>`,
-      'Mixx By Yas': `<div class="operator-logo" style="background:#003366; display:flex; align-items:center; justify-content:center; color:#ffcc00; font-weight:bold; font-size:12px;">MIXX</div>`,
-      'Celtiis': `<div class="operator-logo" style="background:#9333ea; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:14px;">C</div>`
+      'Orange Money': `<img class="operator-logo" src="/orange-money.png" alt="Orange Money">`,
+      'Moov Money': `<img class="operator-logo" src="/moov-money.png" alt="Moov Money">`,
+      'MTN Money': `<img class="operator-logo" src="/mtn-money.png" alt="MTN Money">`,
+      'Wave': `<img class="operator-logo" src="/wave.png" alt="Wave">`,
+      'Mixx By Yas': `<img class="operator-logo" src="/mixx-yas.png" alt="Mixx by Yas">`,
+      'Celtiis': `<img class="operator-logo" src="/celtiis.png" alt="Celtiis">`
     };
 
     const fallbackAgents = {
@@ -177,12 +178,10 @@
       }
     }
 
-    // === DÉBUT AJOUT VIP : vérifier le statut du client ===
     async function verifierStatutVip() {
       const num1 = document.getElementById('numero-telephone').value.trim();
       const num2 = document.getElementById('confirm-telephone').value.trim();
       
-      // On vérifie seulement si les 2 numéros correspondent
       if (!num1 || num1 !== num2 || !currentPrefix) return;
       
       const fullNumber = currentPrefix + num1;
@@ -190,29 +189,24 @@
       const content = document.getElementById('vip-card-content');
       
       try {
-        // Chercher toutes les transactions VALIDÉES de ce numéro
         const { data: transactions } = await supabaseClient
           .from('transactions')
           .select('montant_usdt')
           .eq('numero_telephone', fullNumber)
           .eq('statut', 'valide');
         
-        // Calculer le total
         clientTotalUsdt = (transactions || []).reduce((sum, t) => sum + (parseFloat(t.montant_usdt) || 0), 0);
         clientIsVip = clientTotalUsdt >= vipSeuil;
         
-        // Déterminer le taux à appliquer
         const tauxApplique = clientIsVip ? vipRate : currentRate;
         document.getElementById('taux-valeur').textContent = `${tauxApplique} FCFA/USDT`;
         
-        // Recalculer le montant FCFA si déjà rempli
         const montantUsdt = parseFloat(document.getElementById('montant-usdt').value);
         if (montantUsdt > 0) {
           const total = montantUsdt * tauxApplique;
           document.getElementById('montant-fcfa').textContent = `Vous paierez : ${total.toLocaleString('fr-FR')} FCFA`;
         }
         
-        // Afficher la carte VIP appropriée
         if (clientIsVip) {
           vipCard.className = 'mb-6 rounded-xl p-4 border bg-amber-500/10 border-amber-500/30';
           content.innerHTML = `
@@ -253,7 +247,6 @@
         console.error('Erreur vérification VIP:', e);
       }
     }
-    // === FIN AJOUT VIP ===
 
     function handleCountryChange() {
       const select = document.getElementById('pays');
@@ -379,7 +372,6 @@
     ['numero-telephone', 'confirm-telephone'].forEach(id => {
       document.getElementById(id).addEventListener('input', () => {
         validateForm();
-        // === AJOUT VIP : vérifier statut dès que les numéros correspondent ===
         if (validatePhoneMatch()) {
           verifierStatutVip();
         } else {
@@ -435,7 +427,6 @@
 
       const fullNumber = currentPrefix + document.getElementById('numero-telephone').value.trim();
       const montantUSDT = parseFloat(document.getElementById('montant-usdt').value);
-      // === AJOUT VIP : utiliser le bon taux ===
       const tauxApplique = clientIsVip ? vipRate : currentRate;
       const montantFCFA = montantUSDT * tauxApplique;
 
@@ -451,7 +442,6 @@
         type_transaction: 'achat',
         statut: 'en_attente',
         taux_applique: tauxApplique
-        // Note : on ajoute pas est_vip car cette colonne n'existe pas encore
       };
 
       try {
