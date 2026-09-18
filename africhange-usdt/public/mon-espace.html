@@ -19,7 +19,6 @@
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
 
-  <!-- Header -->
   <header class="border-b border-slate-700 bg-slate-900/50 backdrop-blur sticky top-0 z-40">
     <div class="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
       <a href="/index.html" class="flex items-center gap-3">
@@ -33,8 +32,8 @@
   </header>
 
   <main class="max-w-4xl mx-auto px-6 py-8">
-    
-    <!-- === ÉCRAN 1 : Demande du numéro === -->
+
+    <!-- ÉCRAN 1 : Demande du numéro -->
     <div id="ecran-connexion" class="bg-slate-800/50 backdrop-blur rounded-2xl p-8 border border-slate-700 shadow-2xl max-w-md mx-auto">
       <div class="text-center mb-6">
         <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-500/20">
@@ -61,9 +60,9 @@
       <div id="error-msg" class="hidden mt-4 bg-red-900/50 border border-red-500 text-red-200 p-3 rounded-lg text-sm text-center"></div>
     </div>
 
-    <!-- === ÉCRAN 2 : Espace client (caché au début) === -->
+    <!-- ÉCRAN 2 : Espace client -->
     <div id="ecran-espace" class="hidden space-y-6">
-      
+
       <!-- Carte Statut VIP -->
       <div id="carte-statut" class="rounded-2xl p-6 border-2">
         <div id="contenu-statut"></div>
@@ -80,7 +79,7 @@
           <div class="text-xs text-slate-400 mt-1">Transactions</div>
         </div>
         <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700 text-center">
-          <div class="text-2xl font-bold text-amber-400" id="stat-premiere-date">—</div>
+          <div class="text-lg font-bold text-amber-400" id="stat-premiere-date">—</div>
           <div class="text-xs text-slate-400 mt-1">Client depuis</div>
         </div>
       </div>
@@ -93,11 +92,11 @@
         <div class="space-y-2 text-sm">
           <div class="flex items-center gap-2">
             <span class="text-emerald-400">✓</span>
-            <span>Vous achetez à <strong class="text-amber-300">630 FCFA</strong> au lieu de 650 FCFA</span>
+            <span id="avantage-achat"></span>
           </div>
           <div class="flex items-center gap-2">
             <span class="text-emerald-400">✓</span>
-            <span>Vous vendez à <strong class="text-amber-300">560 FCFA</strong> au lieu de 550 FCFA</span>
+            <span id="avantage-vente"></span>
           </div>
         </div>
       </div>
@@ -123,4 +122,159 @@
 
   <script>
     const SUPABASE_URL = 'https://qlsetlqyejwrhztbesto.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4';
+
+    let sb = null;
+
+    function init() {
+      try {
+        if (typeof window.supabase === 'undefined') throw new Error('Librairie manquante');
+        sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      } catch (e) {
+        showError('Connexion impossible. Rechargez la page.');
+        return;
+      }
+      // Si le client revient, on rouvre directement son espace
+      const saved = sessionStorage.getItem('africhange_espace_numero');
+      if (saved) chargerEspace(saved);
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('error-msg');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+    }
+
+    // Nettoie le numéro : "+226 70 12 34 56" ou "22670123456" ou "00226..." -> "+22670123456"
+    function normaliserNumero(raw) {
+      let n = raw.replace(/[\s\-().]/g, '');
+      if (n.startsWith('00')) n = '+' + n.slice(2);
+      if (!n.startsWith('+') && n.length >= 10) n = '+' + n;
+      return n;
+    }
+
+    document.getElementById('form-numero').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const raw = document.getElementById('input-numero').value.trim();
+      const numero = normaliserNumero(raw);
+      if (!numero.startsWith('+') || numero.length < 9) {
+        showError('Veuillez entrer votre numéro avec l\'indicatif pays. Ex : +226 70 12 34 56');
+        return;
+      }
+      sessionStorage.setItem('africhange_espace_numero', numero);
+      chargerEspace(numero);
+    });
+
+    async function chargerEspace(numero) {
+      try {
+        // 1. Charger la config (seuil VIP + taux)
+        const { data: cfg } = await sb.from('config').select('*').eq('id', 1).single();
+        const c = cfg || {};
+        const seuil = parseFloat(c.vip_seuil_usdt) || 100;
+        const tauxAchat = parseFloat(c.taux_achat_client) || 650;
+        const tauxVente = parseFloat(c.taux_vente_client) || 550;
+        const vipAchat = parseFloat(c.vip_taux_achat) || 630;
+        const vipVente = parseFloat(c.vip_taux_vente) || 560;
+
+        // 2. Charger TOUTES les transactions de ce numéro
+        const { data: txs, error } = await sb.from('transactions')
+          .select('*')
+          .eq('numero_telephone', numero)
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+
+        if (!txs || txs.length === 0) {
+          sessionStorage.removeItem('africhange_espace_numero');
+          showError('Aucune transaction trouvée pour ce numéro. Vérifiez l\'indicatif pays, ou faites votre première transaction depuis l\'accueil.');
+          return;
+        }
+
+        // 3. Calculs (seules les transactions VALIDÉES comptent pour le VIP)
+        const validees = txs.filter(t => t.statut === 'valide');
+        const totalUsdt = validees.reduce((s, t) => s + (parseFloat(t.montant_usdt) || 0), 0);
+        const estVip = totalUsdt >= seuil;
+
+        // 4. Afficher l'espace
+        document.getElementById('ecran-connexion').classList.add('hidden');
+        document.getElementById('ecran-espace').classList.remove('hidden');
+
+        // 5. Carte de statut
+        const carte = document.getElementById('carte-statut');
+        const contenu = document.getElementById('contenu-statut');
+        if (estVip) {
+          carte.className = 'rounded-2xl p-6 border-2 bg-gradient-to-br from-amber-500/20 to-amber-600/5 border-amber-500/50';
+          contenu.innerHTML =
+            '<div class="flex items-center gap-4">' +
+              '<div class="text-5xl">⭐</div>' +
+              '<div>' +
+                '<div class="text-xl font-bold text-amber-300">Client VIP</div>' +
+                '<div class="text-sm text-amber-200/80 mt-1">Merci pour votre fidélité ! Vous profitez de taux préférentiels sur toutes vos transactions.</div>' +
+              '</div>' +
+            '</div>';
+          document.getElementById('bloc-avantages').classList.remove('hidden');
+          document.getElementById('avantage-achat').innerHTML = 'Vous achetez à <strong class="text-amber-300">' + vipAchat + ' FCFA</strong> au lieu de ' + tauxAchat + ' FCFA';
+          document.getElementById('avantage-vente').innerHTML = 'Vous vendez à <strong class="text-amber-300">' + vipVente + ' FCFA</strong> au lieu de ' + tauxVente + ' FCFA';
+        } else {
+          const restant = Math.max(seuil - totalUsdt, 0);
+          const pourcent = Math.min((totalUsdt / seuil) * 100, 100);
+          carte.className = 'rounded-2xl p-6 border-2 bg-slate-800/50 border-slate-700';
+          contenu.innerHTML =
+            '<div class="flex items-center gap-4 mb-3">' +
+              '<div class="text-4xl">🎁</div>' +
+              '<div>' +
+                '<div class="text-lg font-bold text-white">Programme de fidélité</div>' +
+                '<div class="text-sm text-slate-400 mt-1">Plus que <strong class="text-emerald-400">' + restant.toFixed(2) + ' USDT</strong> pour devenir VIP et profiter de taux préférentiels !</div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="w-full bg-slate-700 rounded-full h-3">' +
+              '<div class="bg-gradient-to-r from-emerald-400 to-emerald-600 h-3 rounded-full" style="width: ' + pourcent + '%"></div>' +
+            '</div>' +
+            '<div class="text-xs text-slate-500 mt-2">' + totalUsdt.toFixed(2) + ' / ' + seuil + ' USDT échangés</div>';
+        }
+
+        // 6. Stats rapides
+        document.getElementById('stat-total-usdt').textContent = totalUsdt.toFixed(2);
+        document.getElementById('stat-nb-transactions').textContent = txs.length;
+        const premiere = txs[txs.length - 1];
+        document.getElementById('stat-premiere-date').textContent =
+          new Date(premiere.created_at).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+
+        // 7. Liste des transactions
+        const liste = document.getElementById('liste-transactions');
+        liste.innerHTML = txs.map(function (t) {
+          const typeBadge = t.type_transaction === 'achat'
+            ? '<span class="px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 text-xs font-bold border border-cyan-500/20">ACHAT</span>'
+            : '<span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 text-xs font-bold border border-amber-500/20">VENTE</span>';
+          let statutBadge = '<span class="px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 text-xs border border-yellow-500/20">En attente</span>';
+          if (t.statut === 'valide') statutBadge = '<span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-xs border border-emerald-500/20">Validée</span>';
+          if (t.statut === 'rejete') statutBadge = '<span class="px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 text-xs border border-red-500/20">Rejetée</span>';
+          const date = new Date(t.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+          const estAchat = t.type_transaction === 'achat';
+          const texte = estAchat ? 'Vous avez acheté' : 'Vous avez vendu';
+          return '<div class="bg-slate-900/50 border border-slate-700 rounded-xl p-4 flex items-center justify-between gap-3">' +
+            '<div>' +
+              '<div class="flex items-center gap-2 mb-1">' + typeBadge + ' ' + statutBadge + '</div>' +
+              '<div class="text-sm text-slate-300">' + texte + ' <strong class="text-white">' + (parseFloat(t.montant_usdt) || 0).toFixed(2) + ' USDT</strong></div>' +
+              '<div class="text-xs text-slate-500 mt-0.5">' + date + ' · ' + (parseFloat(t.montant_fcfa) || 0).toLocaleString('fr-FR') + ' FCFA</div>' +
+            '</div>' +
+            '<div class="text-right text-sm font-bold ' + (estAchat ? 'text-emerald-400' : 'text-amber-400') + '">' +
+              (estAchat ? '+' : '-') + (parseFloat(t.montant_usdt) || 0).toFixed(2) + ' USDT' +
+            '</div>' +
+          '</div>';
+        }).join('');
+
+      } catch (e) {
+        console.error(e);
+        showError('Erreur de chargement : ' + (e.message || 'réessayez dans quelques secondes'));
+      }
+    }
+
+    function deconnexion() {
+      sessionStorage.removeItem('africhange_espace_numero');
+      window.location.href = '/index.html';
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
