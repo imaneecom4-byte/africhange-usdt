@@ -7,14 +7,12 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/css/style.css" />
 
-<!-- ===== AJOUT PWA : Métadonnées pour installation mobile ===== -->
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#10b981">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="AfriChange">
 <link rel="apple-touch-icon" href="/icon-192.png">
-<!-- ===== FIN AJOUT PWA ===== -->
 
 <style>
   @keyframes float {
@@ -29,7 +27,6 @@
     background-clip: text;
   }
   
-  /* ===== AJOUT PWA : Style de la bannière d'installation (EN HAUT) ===== */
   #install-banner {
     position: fixed;
     top: 80px;
@@ -65,9 +62,7 @@
   }
   #install-banner button:hover { transform: scale(1.05); }
   #install-banner button:active { transform: scale(0.95); }
-  /* ===== FIN AJOUT PWA ===== */
 
-  /* ===== NOUVEAU : Carrousel promos ===== */
   .carousel-container {
     position: relative;
     width: 100%;
@@ -135,9 +130,7 @@
   .carousel-arrow:hover { background: rgba(0, 0, 0, 0.8); }
   .carousel-arrow.prev { left: 12px; }
   .carousel-arrow.next { right: 12px; }
-  /* ===== FIN CARROUSEL ===== */
 
-  /* ===== NOUVEAU : Bouton WhatsApp flottant (EN BAS À GAUCHE, SEUL) ===== */
   #whatsapp-button {
     position: fixed;
     bottom: 24px;
@@ -161,12 +154,26 @@
     0%, 100% { box-shadow: 0 8px 24px rgba(37, 211, 102, 0.5); }
     50% { box-shadow: 0 8px 32px rgba(37, 211, 102, 0.8); }
   }
-  /* ===== FIN WHATSAPP ===== */
+
+  /* === NOUVELLES SECTIONS === */
+  .section-label { letter-spacing: .2em; text-transform: uppercase; font-size: .78rem; font-weight: 700; color: #34d399; }
+  .flag-svg { width: 52px; height: 52px; border-radius: 50%; box-shadow: 0 0 0 3px rgba(255,255,255,.08); }
+  .method-card { background: rgba(30,41,59,.5); border: 1px solid rgba(255,255,255,.08); border-radius: 1.25rem; padding: 1.25rem; transition: all .3s; }
+  .method-card:hover { border-color: rgba(16,185,129,.4); transform: translateY(-3px); }
+  .method-badge { font-size: .65rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; letter-spacing: .05em; }
+  .step-card { background: rgba(30,41,59,.5); border: 1px solid rgba(255,255,255,.08); border-radius: 1.5rem; padding: 1.75rem; position: relative; transition: all .3s; }
+  .step-card:hover { border-color: rgba(16,185,129,.3); transform: translateY(-3px); }
+  .step-num { font-size: 2.5rem; font-weight: 800; background: linear-gradient(135deg,#34d399,#06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; }
+  .faq-item { background: rgba(30,41,59,.5); border: 1px solid rgba(255,255,255,.08); border-radius: 1rem; overflow: hidden; transition: border-color .2s; }
+  .faq-item:hover { border-color: rgba(255,255,255,.15); }
+  .faq-body { max-height: 0; overflow: hidden; transition: max-height .35s ease; }
+  .faq-icon { transition: transform .3s ease; color: #34d399; }
+  .faq-item.open .faq-icon { transform: rotate(45deg); }
+  .faq-btn { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 1.25rem; text-align: left; font-weight: 600; color: #fff; background: none; border: none; cursor: pointer; font-size: 1rem; }
 </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
 
-  <!-- === DÉBUT AJOUT REDIRECTION MAINTENANCE === -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     (async () => {
@@ -179,9 +186,7 @@
       } catch(e) { console.error('Erreur maintenance', e); }
     })();
   </script>
-  <!-- === FIN AJOUT REDIRECTION MAINTENANCE === -->
 
-  <!-- Header -->
   <header class="border-b border-slate-700 bg-slate-900/50 backdrop-blur sticky top-0 z-40">
     <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
       <div class="flex items-center gap-3">
@@ -192,20 +197,17 @@
         </div>
       </div>
       
-      <!-- === DÉBUT AJOUT BOUTON MON ESPACE === -->
       <a href="/mon-espace.html" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 hover:border-emerald-500/50 transition-all text-sm">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
         </svg>
         <span class="text-slate-300 font-medium hidden sm:inline">Mon espace</span>
       </a>
-      <!-- === FIN AJOUT BOUTON MON ESPACE === -->
     </div>
   </header>
 
   <main class="max-w-6xl mx-auto px-6 py-12">
     
-    <!-- Hero Section -->
     <section class="text-center mb-16">
       <h2 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">
         Vos francs CFA contre des <span class="gradient-text">USDT</span>,<br>
@@ -216,7 +218,6 @@
       </p>
     </section>
 
-    <!-- ===== NOUVEAU : Carrousel Promos ===== -->
     <section id="carousel-section" class="hidden mb-16">
       <div class="carousel-container">
         <div id="carousel-track" class="carousel-track"></div>
@@ -225,26 +226,20 @@
         <div id="carousel-dots" class="carousel-dots"></div>
       </div>
     </section>
-    <!-- ===== FIN CARROUSEL ===== -->
 
-    <!-- Options Principales -->
-    <section class="grid md:grid-cols-2 gap-8 mb-16">
+    <section class="grid md:grid-cols-2 gap-8 mb-20">
       
-      <!-- Achat USDT -->
       <a href="/achat-step1.html" class="group block">
         <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 border border-slate-700 hover:border-emerald-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-emerald-500/10 relative overflow-hidden">
           <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-emerald-500/20 transition duration-500"></div>
-          
           <div class="relative z-10">
             <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center mb-6 shadow-lg shadow-emerald-500/20 floating">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-slate-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
               </svg>
             </div>
-            
             <h3 class="text-2xl font-bold mb-4 text-white group-hover:text-emerald-400 transition">Acheter des USDT</h3>
             <p class="text-slate-300 mb-6 leading-relaxed">Payez par Mobile Money, recevez vos USDT sur votre wallet.</p>
-            
             <div class="flex items-center gap-2 text-sm text-slate-400">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -255,21 +250,17 @@
         </div>
       </a>
 
-      <!-- Vente USDT -->
       <a href="/vente-step1.html" class="group block">
         <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 border border-slate-700 hover:border-amber-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-amber-500/10 relative overflow-hidden">
           <div class="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-amber-500/20 transition duration-500"></div>
-          
           <div class="relative z-10">
             <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center mb-6 shadow-lg shadow-amber-500/20 floating">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-slate-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
               </svg>
             </div>
-            
             <h3 class="text-2xl font-bold mb-4 text-white group-hover:text-amber-400 transition">Vendre des USDT</h3>
             <p class="text-slate-300 mb-6 leading-relaxed">Envoyez vos USDT, recevez vos francs CFA sur Mobile Money.</p>
-            
             <div class="flex items-center gap-2 text-sm text-slate-400">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -281,11 +272,135 @@
       </a>
     </section>
 
-    <!-- Avantages -->
-    <section class="mb-16">
+    <!-- ===== NOUVEAU : PAYS SUPPORTÉS (drapeaux SVG) ===== -->
+    <section class="mb-20">
+      <p class="section-label mb-3">Couverture</p>
+      <h3 class="text-3xl md:text-4xl font-bold mb-4">Pays supportés</h3>
+      <p class="text-slate-400 mb-10 max-w-xl">Vos USDT et vos francs CFA circulent dans ces 4 pays, sur tous les grands réseaux Mobile Money.</p>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div class="bg-slate-800/30 border border-slate-700 rounded-2xl p-6 flex flex-col items-center gap-4 text-center">
+          <svg viewBox="0 0 60 60" class="flag-svg"><defs><clipPath id="f-ci"><circle cx="30" cy="30" r="30"/></clipPath></defs><g clip-path="url(#f-ci)"><rect width="20" height="60" fill="#F77F00"/><rect x="20" width="20" height="60" fill="#ffffff"/><rect x="40" width="20" height="60" fill="#009E60"/></g></svg>
+          <span class="font-semibold">Côte d'Ivoire</span>
+        </div>
+        <div class="bg-slate-800/30 border border-slate-700 rounded-2xl p-6 flex flex-col items-center gap-4 text-center">
+          <svg viewBox="0 0 60 60" class="flag-svg"><defs><clipPath id="f-bf"><circle cx="30" cy="30" r="30"/></clipPath></defs><g clip-path="url(#f-bf)"><rect width="60" height="30" fill="#EF2B2D"/><rect y="30" width="60" height="30" fill="#009E49"/><polygon points="30,17 33.4,25.6 42.6,26.2 35.6,32.2 37.7,41.2 30,36.2 22.3,41.2 24.4,32.2 17.4,26.2 26.6,25.6" fill="#FCD116"/></g></svg>
+          <span class="font-semibold">Burkina Faso</span>
+        </div>
+        <div class="bg-slate-800/30 border border-slate-700 rounded-2xl p-6 flex flex-col items-center gap-4 text-center">
+          <svg viewBox="0 0 60 60" class="flag-svg"><defs><clipPath id="f-bj"><circle cx="30" cy="30" r="30"/></clipPath></defs><g clip-path="url(#f-bj)"><rect width="24" height="60" fill="#008751"/><rect x="24" width="36" height="30" fill="#FCD116"/><rect x="24" y="30" width="36" height="30" fill="#E8112D"/></g></svg>
+          <span class="font-semibold">Bénin</span>
+        </div>
+        <div class="bg-slate-800/30 border border-slate-700 rounded-2xl p-6 flex flex-col items-center gap-4 text-center">
+          <svg viewBox="0 0 60 60" class="flag-svg"><defs><clipPath id="f-tg"><circle cx="30" cy="30" r="30"/></clipPath></defs><g clip-path="url(#f-tg)"><rect width="60" height="60" fill="#FFCE00"/><rect width="60" height="12" fill="#006A4E"/><rect y="24" width="60" height="12" fill="#006A4E"/><rect y="48" width="60" height="12" fill="#006A4E"/><rect width="26" height="26" fill="#D21034"/><polygon points="13,5 15.4,10.8 21.6,11.2 16.9,15.2 18.3,21.2 13,17.9 7.7,21.2 9.1,15.2 4.4,11.2 10.6,10.8" fill="#ffffff"/></g></svg>
+          <span class="font-semibold">Togo</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== NOUVEAU : GRILLE CRYPTO & MOBILE MONEY ===== -->
+    <section class="mb-20">
+      <p class="section-label mb-3">Moyens supportés</p>
+      <h3 class="text-3xl md:text-4xl font-bold mb-10">Crypto & Mobile Money</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+
+        <div class="method-card flex flex-col gap-4">
+          <div class="flex items-start justify-between">
+            <div class="w-14 h-14 rounded-xl bg-[#26A17B] flex items-center justify-center text-white text-2xl font-bold">₮</div>
+            <span class="method-badge bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Crypto</span>
+          </div>
+          <div><div class="font-bold text-lg">USDT</div><div class="text-sm text-slate-400">Réseau BEP-20 (BSC)</div></div>
+        </div>
+
+        <div class="method-card flex flex-col gap-4">
+          <div class="flex items-start justify-between">
+            <img src="/orange-money.png" alt="Orange Money" class="w-14 h-14 rounded-xl object-contain bg-white p-1">
+            <span class="method-badge bg-slate-700/50 text-slate-300 border border-slate-600">Mobile Money</span>
+          </div>
+          <div><div class="font-bold text-lg">Orange Money</div><div class="text-sm text-slate-400">Burkina · Côte d'Ivoire</div></div>
+        </div>
+
+        <div class="method-card flex flex-col gap-4">
+          <div class="flex items-start justify-between">
+            <img src="/wave.png" alt="Wave" class="w-14 h-14 rounded-xl object-contain bg-white p-1">
+            <span class="method-badge bg-slate-700/50 text-slate-300 border border-slate-600">Mobile Money</span>
+          </div>
+          <div><div class="font-bold text-lg">Wave</div><div class="text-sm text-slate-400">Côte d'Ivoire</div></div>
+        </div>
+
+        <div class="method-card flex flex-col gap-4">
+          <div class="flex items-start justify-between">
+            <img src="/mtn-money.png" alt="MTN Money" class="w-14 h-14 rounded-xl object-contain bg-white p-1">
+            <span class="method-badge bg-slate-700/50 text-slate-300 border border-slate-600">Mobile Money</span>
+          </div>
+          <div><div class="font-bold text-lg">MTN Money</div><div class="text-sm text-slate-400">Bénin · Côte d'Ivoire</div></div>
+        </div>
+
+        <div class="method-card flex flex-col gap-4">
+          <div class="flex items-start justify-between">
+            <img src="/moov-money.png" alt="Moov Money" class="w-14 h-14 rounded-xl object-contain bg-white p-1">
+            <span class="method-badge bg-slate-700/50 text-slate-300 border border-slate-600">Mobile Money</span>
+          </div>
+          <div><div class="font-bold text-lg">Moov Money</div><div class="text-sm text-slate-400">Burkina · Togo</div></div>
+        </div>
+
+        <div class="method-card flex flex-col gap-4">
+          <div class="flex items-start justify-between">
+            <img src="/mixx-yas.png?v=3" alt="Mixx by Yas" class="w-14 h-14 rounded-xl object-contain bg-white p-1">
+            <span class="method-badge bg-slate-700/50 text-slate-300 border border-slate-600">Mobile Money</span>
+          </div>
+          <div><div class="font-bold text-lg">Mixx by Yas</div><div class="text-sm text-slate-400">Togo</div></div>
+        </div>
+
+        <div class="method-card flex flex-col gap-4">
+          <div class="flex items-start justify-between">
+            <img src="/celtiis.png" alt="Celtiis" class="w-14 h-14 rounded-xl object-contain bg-white p-1">
+            <span class="method-badge bg-slate-700/50 text-slate-300 border border-slate-600">Mobile Money</span>
+          </div>
+          <div><div class="font-bold text-lg">Celtiis</div><div class="text-sm text-slate-400">Bénin</div></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===== NOUVEAU : COMMENT ÇA MARCHE (5 étapes) ===== -->
+    <section class="mb-20">
+      <div class="text-center mb-12">
+        <p class="section-label mb-3">Processus</p>
+        <h3 class="text-3xl md:text-4xl font-bold mb-4">Comment ça marche</h3>
+        <p class="text-slate-400">5 étapes claires. Moins de 10 minutes.</p>
+      </div>
+      <div class="grid md:grid-cols-5 gap-4">
+        <div class="step-card">
+          <div class="step-num mb-3">01</div>
+          <h4 class="font-bold text-lg mb-2">Vos informations</h4>
+          <p class="text-sm text-slate-400 leading-relaxed">Nom, pays, numéro Mobile Money et wallet de réception.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num mb-3">02</div>
+          <h4 class="font-bold text-lg mb-2">Réseau & montant</h4>
+          <p class="text-sm text-slate-400 leading-relaxed">Choisissez votre opérateur et le montant en USDT.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num mb-3">03</div>
+          <h4 class="font-bold text-lg mb-2">Payez ou envoyez</h4>
+          <p class="text-sm text-slate-400 leading-relaxed">Mobile Money (achat) ou USDT (vente) vers notre adresse.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num mb-3">04</div>
+          <h4 class="font-bold text-lg mb-2">Votre preuve</h4>
+          <p class="text-sm text-slate-400 leading-relaxed">Téléchargez la capture de votre paiement pour vérification.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num mb-3">05</div>
+          <h4 class="font-bold text-lg mb-2">Réception</h4>
+          <p class="text-sm text-slate-400 leading-relaxed">Après validation, tout arrive automatiquement en minutes.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="mb-20">
       <h3 class="text-2xl font-bold text-center mb-8">Pourquoi choisir AfriChange ?</h3>
       <div class="grid md:grid-cols-3 gap-6">
-        
         <div class="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
           <div class="w-12 h-12 rounded-lg bg-emerald-500/10 flex items-center justify-center mb-4">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -318,20 +433,75 @@
       </div>
     </section>
 
-    <!-- Opérateurs Supportés -->
-    <section class="text-center">
-      <h3 class="text-xl font-semibold mb-6">Opérateurs Mobile Money supportés</h3>
-      <div class="flex flex-wrap justify-center gap-4">
-        <div class="bg-slate-800/50 px-6 py-3 rounded-full border border-slate-700"> Orange Money</div>
-        <div class="bg-slate-800/50 px-6 py-3 rounded-full border border-slate-700">🔵 Moov Money</div>
-        <div class="bg-slate-800/50 px-6 py-3 rounded-full border border-slate-700">🟡 MTN Money</div>
-        <div class="bg-slate-800/50 px-6 py-3 rounded-full border border-slate-700">🌊 Wave</div>
-        <div class="bg-slate-800/50 px-6 py-3 rounded-full border border-slate-700">🟣 Celtiis</div>
+    <!-- ===== NOUVEAU : FAQ ===== -->
+    <section class="mb-16 max-w-3xl mx-auto">
+      <div class="text-center mb-10">
+        <p class="section-label mb-3">FAQ</p>
+        <h3 class="text-3xl md:text-4xl font-bold">Questions fréquentes</h3>
+      </div>
+      <div class="space-y-3">
+
+        <div class="faq-item">
+          <button class="faq-btn" onclick="toggleFaq(this)">
+            <span>Quels pays sont supportés ?</span>
+            <span class="faq-icon text-2xl leading-none">+</span>
+          </button>
+          <div class="faq-body"><p class="px-5 pb-5 text-sm text-slate-400">Nous couvrons le <strong class="text-slate-200">Burkina Faso, la Côte d'Ivoire, le Bénin et le Togo</strong>, avec les principaux réseaux Mobile Money de chaque pays.</p></div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" onclick="toggleFaq(this)">
+            <span>Quels réseaux mobiles sont supportés ?</span>
+            <span class="faq-icon text-2xl leading-none">+</span>
+          </button>
+          <div class="faq-body"><p class="px-5 pb-5 text-sm text-slate-400">Orange Money, Moov Money, MTN Money, Wave, Mixx by Yas et Celtiis.</p></div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" onclick="toggleFaq(this)">
+            <span>Quelle crypto-monnaie est acceptée ?</span>
+            <span class="faq-icon text-2xl leading-none">+</span>
+          </button>
+          <div class="faq-body"><p class="px-5 pb-5 text-sm text-slate-400">L'<strong class="text-slate-200">USDT sur le réseau BEP-20</strong> (Binance Smart Chain). Vérifiez bien le réseau avant d'envoyer.</p></div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" onclick="toggleFaq(this)">
+            <span>Combien de temps dure une transaction ?</span>
+            <span class="faq-icon text-2xl leading-none">+</span>
+          </button>
+          <div class="faq-body"><p class="px-5 pb-5 text-sm text-slate-400">Quelques minutes après la validation de votre preuve de paiement par notre équipe.</p></div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" onclick="toggleFaq(this)">
+            <span>Dois-je créer un compte ?</span>
+            <span class="faq-icon text-2xl leading-none">+</span>
+          </button>
+          <div class="faq-body"><p class="px-5 pb-5 text-sm text-slate-400">Non. Votre <strong class="text-slate-200">numéro de téléphone</strong> suffit : il sert aussi de carte de fidélité pour le programme VIP.</p></div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" onclick="toggleFaq(this)">
+            <span>Quel est le montant minimum ?</span>
+            <span class="faq-icon text-2xl leading-none">+</span>
+          </button>
+          <div class="faq-body"><p class="px-5 pb-5 text-sm text-slate-400">1 USDT par transaction.</p></div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" onclick="toggleFaq(this)">
+            <span>Comment contacter le support ?</span>
+            <span class="faq-icon text-2xl leading-none">+</span>
+          </button>
+          <div class="faq-body"><p class="px-5 pb-5 text-sm text-slate-400">Via le <strong class="text-slate-200">bouton WhatsApp</strong> disponible en bas de chaque page, 7j/7.</p></div>
+        </div>
+
       </div>
     </section>
+
   </main>
 
-  <!-- Footer -->
   <footer class="border-t border-slate-700 bg-slate-900/50 mt-16">
     <div class="max-w-6xl mx-auto px-6 py-8 text-center text-sm text-slate-400">
       <p>&copy; 2024 AfriChange USDT. Tous droits réservés.</p>
@@ -339,7 +509,6 @@
     </div>
   </footer>
 
-  <!-- ===== AJOUT PWA : Bannière d'installation ===== -->
   <div id="install-banner">
     <div>
       <div class="font-bold text-base">📱 Installer AfriChange</div>
@@ -348,19 +517,16 @@
     <button id="install-button">Installer</button>
   </div>
 
-  <!-- ===== NOUVEAU : Bouton WhatsApp flottant ===== -->
   <a id="whatsapp-button" href="#" target="_blank" rel="noopener" aria-label="Contactez-nous sur WhatsApp">
     <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="white">
       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
     </svg>
   </a>
-  <!-- ===== FIN WHATSAPP ===== -->
 
   <script>
     const SB_URL = 'https://qlsetlqyejwrhztbesto.supabase.co';
     const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsc2V0bHF5ZWp3cmh6dGJlc3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTc1NzIsImV4cCI6MjEwNDQzMzU3Mn0.kcaf8RzfhPDGsAFhRfqDf6g7JiMSxh2Aoc2kk9v6gZ4';
 
-    // ===== PWA : Service Worker + bannière =====
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
@@ -389,7 +555,6 @@
       console.log('🎉 PWA installée');
     });
 
-    // ===== NOUVEAU : Bouton WhatsApp =====
     (async () => {
       try {
         const resp = await fetch(`${SB_URL}/rest/v1/config?id=eq.1&select=numero_whatsapp`, {
@@ -406,7 +571,6 @@
       } catch (e) { console.error('WhatsApp:', e); }
     })();
 
-    // ===== NOUVEAU : Carrousel Promos =====
     let carouselIndex = 0;
     let carouselSlides = [];
     let carouselTimer = null;
@@ -460,6 +624,18 @@
     };
 
     chargerPromos();
+
+    // ===== FAQ accordéon =====
+    window.toggleFaq = function (btn) {
+      const item = btn.parentElement;
+      const wasOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item').forEach(i => { i.classList.remove('open'); i.querySelector('.faq-body').style.maxHeight = null; });
+      if (!wasOpen) {
+        item.classList.add('open');
+        const body = item.querySelector('.faq-body');
+        body.style.maxHeight = body.scrollHeight + 'px';
+      }
+    };
   </script>
 
 </body>
