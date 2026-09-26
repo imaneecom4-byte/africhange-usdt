@@ -44,18 +44,18 @@
         
         <div class="grid md:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-slate-300 mb-2">Prénom</label>
-            <input type="text" id="prenom" class="champ bg-slate-900 border-slate-600 text-white placeholder-slate-500" placeholder="Ex : Kokou" required />
+            <label for="prenom" class="block text-sm font-medium text-slate-300 mb-2">Prénom</label>
+            <input type="text" id="prenom" name="prenom" autocomplete="given-name" autocapitalize="words" class="champ bg-slate-900 border-slate-600 text-white placeholder-slate-500" placeholder="Ex : Kokou" required />
           </div>
           <div>
-            <label class="block text-sm font-medium text-slate-300 mb-2">Nom</label>
-            <input type="text" id="nom" class="champ bg-slate-900 border-slate-600 text-white placeholder-slate-500" placeholder="Ex : Adjovi" required />
+            <label for="nom" class="block text-sm font-medium text-slate-300 mb-2">Nom</label>
+            <input type="text" id="nom" name="nom" autocomplete="family-name" autocapitalize="words" class="champ bg-slate-900 border-slate-600 text-white placeholder-slate-500" placeholder="Ex : Adjovi" required />
           </div>
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-slate-300 mb-2">Pays</label>
-          <select id="pays" class="champ bg-slate-900 border-slate-600 text-white" required onchange="handleCountryChange()">
+          <label for="pays" class="block text-sm font-medium text-slate-300 mb-2">Pays</label>
+          <select id="pays" name="pays" autocomplete="country-name" class="champ bg-slate-900 border-slate-600 text-white" required onchange="handleCountryChange()">
             <option value="">Sélectionnez votre pays</option>
             <option value="Burkina Faso" data-prefix="+226">🇧🇫 Burkina Faso (+226)</option>
             <option value="Côte d'Ivoire" data-prefix="+225">🇨🇮 Côte d'Ivoire (+225)</option>
@@ -65,33 +65,33 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-slate-300 mb-2">Numéro de réception (Mobile Money)</label>
+          <label for="numero-reception" class="block text-sm font-medium text-slate-300 mb-2">Numéro de réception (Mobile Money)</label>
           <div class="input-group">
             <span id="phone-prefix" class="prefix-badge hidden">+---</span>
-            <input type="tel" id="numero-reception" class="champ bg-slate-900 border-slate-600 text-white placeholder-slate-500 input-with-prefix" placeholder="70 00 00 00" disabled required />
+            <input type="tel" id="numero-reception" name="numero-reception" autocomplete="tel-national" inputmode="numeric" class="champ bg-slate-900 border-slate-600 text-white placeholder-slate-500 input-with-prefix" placeholder="70 00 00 00" disabled required />
           </div>
           <p class="text-xs text-slate-500 mt-1">L'indicatif sera ajouté automatiquement.</p>
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-slate-300 mb-2">Confirmer le numéro</label>
+          <label for="confirm-reception" class="block text-sm font-medium text-slate-300 mb-2">Confirmer le numéro</label>
           <div class="input-group">
             <span id="confirm-prefix" class="prefix-badge hidden">+---</span>
-            <input type="tel" id="confirm-reception" class="champ bg-slate-900 border-slate-600 text-white placeholder-slate-500 input-with-prefix" placeholder="70 00 00 00" disabled required />
+            <input type="tel" id="confirm-reception" name="confirm-reception" autocomplete="tel-national" inputmode="numeric" class="champ bg-slate-900 border-slate-600 text-white placeholder-slate-500 input-with-prefix" placeholder="70 00 00 00" disabled required />
           </div>
           <p id="phone-match-msg" class="text-xs text-emerald-400 mt-1 hidden">✓ Les numéros correspondent</p>
           <p id="phone-mismatch-msg" class="text-xs text-red-400 mt-1 hidden">✗ Les numéros ne correspondent pas</p>
         </div>
 
         <div id="operateurs-container" class="hidden">
-          <label class="block text-sm font-medium text-slate-300 mb-3">Réseau mobile</label>
-          <div id="liste-operateurs" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+          <p id="reseau-label" class="block text-sm font-medium text-slate-300 mb-3">Réseau mobile</p>
+          <div id="liste-operateurs" role="group" aria-labelledby="reseau-label" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
           <input type="hidden" id="operateur-selectionne" required />
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-slate-300 mb-2">Montant à vendre (USDT)</label>
-          <input type="number" step="0.01" id="montant-usdt" class="champ bg-slate-900 border-slate-600 text-white placeholder-slate-500" placeholder="Ex : 30" min="1" required />
+          <label for="montant-usdt" class="block text-sm font-medium text-slate-300 mb-2">Montant à vendre (USDT)</label>
+          <input type="number" step="0.01" id="montant-usdt" name="montant-usdt" inputmode="decimal" class="champ bg-slate-900 border-slate-600 text-white placeholder-slate-500" placeholder="Ex : 30" min="1" required />
           <p id="taux-info" class="text-sm text-slate-400 mt-2">Taux de vente : <span id="taux-valeur" class="font-bold text-amber-400">Chargement...</span></p>
           <p id="montant-fcfa" class="text-lg font-bold text-amber-400 mt-1"></p>
         </div>
@@ -231,7 +231,7 @@
       }
       liste.innerHTML = agentsPays.map(agent => {
         const logoSVG = operatorLogos[agent.operateur] || operatorLogos['Orange Money'];
-        return `<div class="operator-card bg-slate-900 border border-slate-700 rounded-xl p-3 cursor-pointer hover:border-amber-500 transition text-center" onclick="selectionnerOperateur('${agent.operateur}', this)"><div class="flex flex-col items-center"><div class="mb-2">${logoSVG}</div><p class="font-medium text-white text-xs">${agent.operateur}</p></div></div>`;
+        return `<button type="button" aria-pressed="false" class="operator-card bg-slate-900 border border-slate-700 rounded-xl p-3 cursor-pointer hover:border-amber-500 transition text-center" onclick="selectionnerOperateur('${agent.operateur}', this)"><div class="flex flex-col items-center"><div class="mb-2">${logoSVG}</div><p class="font-medium text-white text-xs">${agent.operateur}</p></div></button>`;
       }).join('');
       container.classList.remove('hidden');
     }
@@ -277,9 +277,10 @@
     });
 
     function selectionnerOperateur(op, el) {
-      document.querySelectorAll('.operator-card').forEach(c => { c.classList.remove('border-amber-500', 'bg-slate-800'); c.classList.add('border-slate-700', 'bg-slate-900'); });
+      document.querySelectorAll('.operator-card').forEach(c => { c.classList.remove('border-amber-500', 'bg-slate-800'); c.classList.add('border-slate-700', 'bg-slate-900'); c.setAttribute('aria-pressed', 'false'); });
       el.classList.remove('border-slate-700', 'bg-slate-900');
       el.classList.add('border-amber-500', 'bg-slate-800');
+      el.setAttribute('aria-pressed', 'true');
       document.getElementById('operateur-selectionne').value = op;
       validateForm();
     }

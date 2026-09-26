@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Acheter des USDT — Étape 3 · Preuve</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/css/style.css" />
@@ -34,7 +34,7 @@
         <h1 class="font-display text-2xl font-semibold mb-1">Preuve de paiement</h1>
         <p class="text-sm text-slate-400 mb-6">Ajoutez la capture d'écran Mobile Money.</p>
 
-        <div id="zone-depot" class="upload-zone block border-2 border-dashed border-slate-600 rounded-2xl p-8 text-center bg-slate-800/50 mb-4">
+        <div id="zone-depot" role="button" tabindex="0" aria-label="Choisir une image de preuve" class="upload-zone block border-2 border-dashed border-slate-600 rounded-2xl p-8 text-center bg-slate-800/50 mb-4">
           <div class="text-3xl mb-2">📎</div>
           <p class="text-sm text-slate-300 font-medium" id="texte-depot">Cliquez ici pour choisir une image</p>
           <p class="text-xs text-slate-500 mt-1">PNG, JPG — 8 Mo max</p>
@@ -88,6 +88,12 @@
         zone.addEventListener('click', (e) => {
             e.preventDefault();
             input.click();
+        });
+        zone.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                input.click();
+            }
         });
 
         input.addEventListener('change', () => {
