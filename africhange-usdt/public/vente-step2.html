@@ -55,7 +55,7 @@
 
         <div class="rounded-2xl p-4 mb-5 flex items-center justify-between gap-3 bg-slate-800/50 border border-slate-700">
           <span id="adresse-usdt" class="text-xs font-mono break-all text-slate-300">Chargement...</span>
-          <button id="btn-copier" class="text-xs px-3 py-1.5 rounded-lg whitespace-nowrap bg-slate-700 hover:bg-slate-600 text-white transition">Copier</button>
+          <button id="btn-copier" type="button" class="text-xs px-3 py-1.5 rounded-lg whitespace-nowrap bg-slate-700 hover:bg-slate-600 text-white transition" aria-live="polite">Copier</button>
         </div>
 
         <div class="flex justify-between text-sm mb-5">
@@ -161,21 +161,39 @@
             qrcodeContainer.innerHTML = '<p class="text-red-400 text-sm">Erreur QR Code</p>';
         }
 
-        // Gestion du bouton Copier
+        // Gestion du bouton Copier (avec repli sans API presse-papiers)
+        function retourCopie(ok) {
+            const btnCopier = document.getElementById('btn-copier');
+            const originalText = btnCopier.dataset.original || btnCopier.textContent;
+            btnCopier.dataset.original = originalText;
+            btnCopier.textContent = ok ? "Copié !" : "Copie impossible";
+            btnCopier.classList.add('bg-emerald-600');
+            setTimeout(() => {
+                btnCopier.textContent = originalText;
+                btnCopier.classList.remove('bg-emerald-600');
+            }, 2000);
+        }
+        function copieRepli(texte) {
+            const ta = document.createElement('textarea');
+            ta.value = texte;
+            ta.setAttribute('readonly', '');
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            let ok = false;
+            try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+            document.body.removeChild(ta);
+            retourCopie(ok);
+        }
         document.getElementById('btn-copier').addEventListener('click', () => {
-            const addr = adresseEl.textContent;
-            navigator.clipboard.writeText(addr).then(() => {
-                const btnCopier = document.getElementById('btn-copier');
-                const originalText = btnCopier.textContent;
-                btnCopier.textContent = "Copié !";
-                btnCopier.classList.add('bg-emerald-600');
-                setTimeout(() => {
-                    btnCopier.textContent = originalText;
-                    btnCopier.classList.remove('bg-emerald-600');
-                }, 2000);
-            }).catch(err => {
-                console.error('Erreur copie:', err);
-            });
+            const addr = (adresseEl.textContent || '').trim();
+            if (!addr || addr === 'Chargement...') return;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(addr).then(() => retourCopie(true)).catch(() => copieRepli(addr));
+            } else {
+                copieRepli(addr);
+            }
         });
 
         // Gestion du bouton "J'ai envoyé mes USDT"

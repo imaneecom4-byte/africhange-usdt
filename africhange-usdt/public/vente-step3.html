@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Vendre des USDT — Étape 3 · Preuve</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/css/style.css" />
@@ -34,10 +34,10 @@
         <h1 class="font-display text-2xl font-semibold mb-1">Preuve de transaction</h1>
         <p class="text-sm text-slate-400 mb-6">Indiquez le hash (TxID) et ajoutez une capture.</p>
 
-        <label class="text-xs text-slate-400 mb-1 block font-medium">Hash de transaction (TxID)</label>
-        <input type="text" id="txid" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition mb-4" placeholder="Ex : 0x8f3c...a91d" />
+        <label for="txid" class="text-xs text-slate-400 mb-1 block font-medium">Hash de transaction (TxID)</label>
+        <input type="text" id="txid" name="txid" autocomplete="off" autocapitalize="none" spellcheck="false" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition mb-4" placeholder="Ex : 0x8f3c...a91d" />
 
-        <div id="zone-depot" class="upload-zone block border-2 border-dashed border-slate-600 rounded-2xl p-6 text-center bg-slate-800/50 mb-4">
+        <div id="zone-depot" role="button" tabindex="0" aria-label="Ajouter une capture de preuve" class="upload-zone block border-2 border-dashed border-slate-600 rounded-2xl p-6 text-center bg-slate-800/50 mb-4">
           <div class="text-2xl mb-2">📎</div>
           <p class="text-sm text-slate-300 font-medium" id="texte-depot">Cliquez ici pour ajouter une capture (optionnel)</p>
         </div>
@@ -90,6 +90,12 @@
         zone.addEventListener('click', (e) => {
             e.preventDefault();
             input.click();
+        });
+        zone.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                input.click();
+            }
         });
 
         input.addEventListener('change', () => {
